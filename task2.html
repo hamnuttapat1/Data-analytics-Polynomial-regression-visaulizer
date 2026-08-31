@@ -7,22 +7,28 @@
 </head>
 
 <body>
-    <h1 id="topic_name" class="font_36 purple">Polynomial Regression Visaulizer</h1>
+    <h1 id="topic_name" class="font-36 purple">Polynomial Regression Visaulizer</h1>
     <ul>
-        <li class="font_20">Explore how a polynomial curve learns to fit data by minimizing prediction error (MSE).
+        <li class="font-20">Explore how a polynomial curve learns to fit data by minimizing prediction error (MSE).
         </li>
     </ul>
 
-    <div id="outside" class="flex_row">
+    <div id="outside" class="flex-row">
         <div class="scroll">
             <div class="canvas" id="canvas_tl">
-                <div class="flex_row">
+                <div class="flex-row">
                     <i data-lucide="grip"></i>
-                    <p class="canvas_title font_24 purple">DATA CANVAS</p>
+                    <p class="ml-10 font-24 purple">DATA CANVAS</p>
                     <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
                 </div>
                 <div>
-                    <p class="font_20">PRESET DATA SET</p>
+                    <p class="font-20 ml-30">PRESET DATA SET</p>
+                </div>
+                <div class="flex-row ml-30 gap-20">
+                    <button class="button_purple">Linear</button>
+                    <button class="button_purple">Curve</button>
+                    <button class="button_purple">Wave</button>
+                    <button class="button_purple">Random</button>
                 </div>
             </div>
             <div class="canvas" id="canvas_bl"></div>
@@ -52,15 +58,15 @@
         font-size: 16px;
     }
 
-    .font_20 {
+    .font-20 {
         font-size: 20px;
     }
 
-    .font_24 {
+    .font-24 {
         font-size: 24px;
     }
 
-    .font_36 {
+    .font-36 {
         font-size: 36px;
     }
 
@@ -68,19 +74,46 @@
         color: #E3C9FF;
     }
 
-    .flex_row {
+    .ml-10 {
+        margin-left: 10px;
+    }
+
+    .ml-20 {
+        margin-left: 20px;
+    }
+
+    .ml-30 {
+        margin-left: 30px;
+    }
+
+    .gap-20 {
+        gap: 20px;
+    }
+
+    .button_purple {
+        background-color: #080B10;
+        color: #ffffff;
+        border: 1px solid #D0A4FF;
+        border-radius: 9px;
+        padding: 12px 20px;
+        cursor: pointer;
+    }
+
+    .button_purple:hover {
+        background-color: #9B65D5;
+        border: 1px solid #D0A4FF;
+    }
+
+    .flex-row {
         display: flex;
         flex-direction: row;
         
     }
 
-
-
     #topic_name {
         margin-left: 20px;
         margin-bottom: 20px;
     }
-
 
     #outside {
         gap: 20px;
@@ -95,6 +128,14 @@
         scrollbar-width: none;
         padding-right: 10px;
 
+    }
+
+    .lucide-grip {
+        color: #E3C9FF;
+        margin-left: 30px;
+        margin-top: 30px;
+        width: 16px;
+        height: 16px;
     }
 
     .canvas {
@@ -119,18 +160,6 @@
 
     #canvas_br {
         height: 460px;
-    }
-
-    .lucide-grip {
-        color: #E3C9FF;
-        margin-left: 30px;
-        margin-top: 30px;
-        width: 16px;
-        height: 16px;
-    }
-
-    .canvas_title {
-        margin-left: 10px;
     }
 
     .canvas_instruction {
