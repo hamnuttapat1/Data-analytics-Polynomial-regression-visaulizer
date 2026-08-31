@@ -25,10 +25,13 @@
                     <p class="font-20 ml-30">PRESET DATA SET</p>
                 </div>
                 <div class="flex-row ml-30 gap-20">
-                    <button class="button_purple active">Linear</button>
-                    <button class="button_purple">Curve</button>
-                    <button class="button_purple">Wave</button>
-                    <button class="button_purple">Random</button>
+                    <button class="button_purple button_preset active">Linear</button>
+                    <button class="button_purple button_preset">Curve</button>
+                    <button class="button_purple button_preset">Wave</button>
+                    <button class="button_purple button_preset">Random</button>
+                    <div class="vertical_divider"></div>
+                    <button class="button_purple button_container"><i data-lucide="shuffle"></i>Random Data</button>
+                    <button class="button_purple button_container"><i data-lucide="trash-2"></i>Clear Data</button>
                 </div>
             </div>
             <div class="canvas" id="canvas_bl"></div>
@@ -108,7 +111,7 @@
     .flex-row {
         display: flex;
         flex-direction: row;
-        
+
     }
 
     #topic_name {
@@ -139,6 +142,18 @@
         height: 16px;
     }
 
+    .lucide-shuffle {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-trash-2 {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
     .canvas {
         width: 100%;
         border: 1px solid #ffffff;
@@ -148,7 +163,7 @@
 
     #canvas_tl {
         height: 735px;
-        
+
     }
 
     #canvas_bl {
@@ -165,8 +180,22 @@
 
     .canvas_instruction {
         margin-top: 30px;
-        flex-grow: 1; 
-        text-align: center;   
+        flex-grow: 1;
+        text-align: center;
+    }
+
+    .vertical_divider {
+        width: 1px;
+        background-color: #ffffff;
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .button_container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
     }
 </style>
 
@@ -186,18 +215,18 @@ createIcons({
 
 <script>
     // 1. Select all the buttons with the class 'button_purple'
-    const buttons = document.querySelectorAll('.button_purple');
+    const buttons = document.querySelectorAll('.button_preset');
 
     // 2. Add a click event to every button
     buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            
+        button.addEventListener('click', function () {
+
             // 3. Remove the 'active' class from ALL buttons first
             buttons.forEach(btn => btn.classList.remove('active'));
-            
+
             // 4. Add the 'active' class ONLY to the button that was just clicked
             this.classList.add('active');
-            
+
         });
     });
 </script>
