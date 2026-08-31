@@ -7,21 +7,23 @@
 </head>
 
 <body>
-    <h1 id="topic_name">Polynomial Regression Visaulizer</h1>
+    <h1 id="topic_name" class="font_36 purple">Polynomial Regression Visaulizer</h1>
     <ul>
-        <li id="description">Explore how a polynomial curve learns to fit data by minimizing prediction error (MSE).
+        <li class="font_20">Explore how a polynomial curve learns to fit data by minimizing prediction error (MSE).
         </li>
     </ul>
 
-    <div id="outside">
+    <div id="outside" class="flex_row">
         <div class="scroll">
             <div class="canvas" id="canvas_tl">
                 <div class="flex_row">
                     <i data-lucide="grip"></i>
-                    <p class="canvas_title">DATA CANVAS</p>
+                    <p class="canvas_title font_24 purple">DATA CANVAS</p>
                     <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
                 </div>
-
+                <div>
+                    <p class="font_20">PRESET DATA SET</p>
+                </div>
             </div>
             <div class="canvas" id="canvas_bl"></div>
         </div>
@@ -50,29 +52,37 @@
         font-size: 16px;
     }
 
+    .font_20 {
+        font-size: 20px;
+    }
+
+    .font_24 {
+        font-size: 24px;
+    }
+
+    .font_36 {
+        font-size: 36px;
+    }
+
+    .purple {
+        color: #E3C9FF;
+    }
+
     .flex_row {
         display: flex;
         flex-direction: row;
         
     }
 
+
+
     #topic_name {
-        color: #E3C9FF;
         margin-left: 20px;
-        font-family: IBM Plex Mono, monospace;
-        font-size: 36px;
         margin-bottom: 20px;
     }
 
-    #description {
-        color: #FFFFFF;
-        font-family: IBM Plex Mono, monospace;
-        font-size: 20px;
-    }
 
     #outside {
-        display: flex;
-        flex-direction: row;
         gap: 20px;
         margin-left: 20px;
     }
@@ -120,19 +130,13 @@
     }
 
     .canvas_title {
-        font-size: 24px;
-        color: #E3C9FF;
         margin-left: 10px;
     }
 
     .canvas_instruction {
-        font-size: 16px;
-        color: #FFFFFF;
         margin-top: 30px;
-
         flex-grow: 1; 
-        text-align: center;
-        
+        text-align: center;   
     }
 </style>
 
