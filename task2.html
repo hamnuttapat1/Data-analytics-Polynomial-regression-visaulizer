@@ -25,7 +25,7 @@
                     <p class="font-20 ml-30">PRESET DATA SET</p>
                 </div>
                 <div class="flex-row ml-30 gap-20">
-                    <button class="button_purple">Linear</button>
+                    <button class="button_purple active">Linear</button>
                     <button class="button_purple">Curve</button>
                     <button class="button_purple">Wave</button>
                     <button class="button_purple">Random</button>
@@ -99,7 +99,8 @@
         cursor: pointer;
     }
 
-    .button_purple:hover {
+    .button_purple:hover,
+    .button_purple.active {
         background-color: #9B65D5;
         border: 1px solid #D0A4FF;
     }
@@ -182,3 +183,21 @@ createIcons({
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>lucide.createIcons();</script>
+
+<script>
+    // 1. Select all the buttons with the class 'button_purple'
+    const buttons = document.querySelectorAll('.button_purple');
+
+    // 2. Add a click event to every button
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            
+            // 3. Remove the 'active' class from ALL buttons first
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // 4. Add the 'active' class ONLY to the button that was just clicked
+            this.classList.add('active');
+            
+        });
+    });
+</script>
