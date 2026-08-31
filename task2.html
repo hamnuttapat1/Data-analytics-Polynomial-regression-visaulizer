@@ -18,9 +18,10 @@
             <div class="canvas" id="canvas_tl">
                 <div class="flex_row">
                     <i data-lucide="grip"></i>
-                    <p>DATA CANVAS</p>
+                    <p class="canvas_title">DATA CANVAS</p>
+                    <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
                 </div>
-                
+
             </div>
             <div class="canvas" id="canvas_bl"></div>
         </div>
@@ -46,11 +47,13 @@
         overflow: hidden;
         color: #FFFFFF;
         font-family: 'IBM Plex Mono', monospace;
+        font-size: 16px;
     }
 
     .flex_row {
         display: flex;
         flex-direction: row;
+        
     }
 
     #topic_name {
@@ -93,6 +96,7 @@
 
     #canvas_tl {
         height: 735px;
+        
     }
 
     #canvas_bl {
@@ -113,6 +117,22 @@
         margin-top: 30px;
         width: 16px;
         height: 16px;
+    }
+
+    .canvas_title {
+        font-size: 24px;
+        color: #E3C9FF;
+        margin-left: 10px;
+    }
+
+    .canvas_instruction {
+        font-size: 16px;
+        color: #FFFFFF;
+        margin-top: 30px;
+
+        flex-grow: 1; 
+        text-align: center;
+        
     }
 </style>
 
