@@ -43,7 +43,7 @@
             </div>
             <div class="canvas" id="canvas_bl">
                 <div class="flex-row">
-                    <i data-lucide="settings"></i>  
+                    <i data-lucide="settings"></i>
                     <p class="purple font-24 ml-10">HYPERPARAMETERS & CONTROL</p>
                 </div>
                 <div>
@@ -52,16 +52,16 @@
                             <div class="mt-20 ml-20 mb-10 font-20">MODEL SETTING</div>
                             <div class="flex-row center space_between mx-20">
                                 <div class="grey">Polynomial Degree</div>
-                                <div class="value_box" id="degree_value">2</div>
+                                <div class="value_box" id="degree_value" contenteditable="true">2</div>
                             </div>
                             <div class="flex-row center justify_center mt-20 gap-10">
                                 <div>1</div>
-                                    <input type="range" id="degree_slider" min="1" max="6" value="2" class="custom_slider">
+                                <input type="range" id="degree_slider" min="1" max="6" value="2" class="custom_slider">
                                 <div>6</div>
                             </div>
                         </div>
                         <div class="setting_box w-395">
-                            
+
                         </div>
                     </div>
                 </div>
@@ -94,45 +94,119 @@
         color: #FFFFFF;
         font-family: 'IBM Plex Mono', monospace;
         font-size: 16px;
-        
-    }
-    
 
-    .font-20 {font-size: 20px;}
-    .font-24 {font-size: 24px;}
-    .font-36 {font-size: 36px;}
-    .purple {color: #E3C9FF;}
-    .grey {color: #BCB9B9;}
-    .ml-10 {margin-left: 10px;}
-    .ml-20 {margin-left: 20px;}
-    .ml-30 {margin-left: 30px;}
-    .mt-10 {margin-top: 10px;}
-    .mt-20 {margin-top: 20px;}
-    .mt-30 {margin-top: 30px;}
-    .mt-0 {margin-top: 0px;}
-    .mr-20 {margin-right: 20px;}
-    .mb-10 {margin-bottom: 10px;}
-    .mb-30 {margin-bottom: 30px;}
-    .gap-10 {gap: 10px;}
-    .gap-20 {gap: 20px;}
-    .w-395 {width: 395px;}
-    .w-430 {width: 430px;}
-    .m-10 {margin: 10px;}
-    .m-20 {margin: 20px;}
-    .mx-30 {margin-left: 30px; margin-right: 30px;}
-    .mx-20 {margin-left: 20px; margin-right: 20px;}
+    }
+
+
+    .font-20 {
+        font-size: 20px;
+    }
+
+    .font-24 {
+        font-size: 24px;
+    }
+
+    .font-36 {
+        font-size: 36px;
+    }
+
+    .purple {
+        color: #E3C9FF;
+    }
+
+    .grey {
+        color: #BCB9B9;
+    }
+
+    .ml-10 {
+        margin-left: 10px;
+    }
+
+    .ml-20 {
+        margin-left: 20px;
+    }
+
+    .ml-30 {
+        margin-left: 30px;
+    }
+
+    .mt-10 {
+        margin-top: 10px;
+    }
+
+    .mt-20 {
+        margin-top: 20px;
+    }
+
+    .mt-30 {
+        margin-top: 30px;
+    }
+
+    .mt-0 {
+        margin-top: 0px;
+    }
+
+    .mr-20 {
+        margin-right: 20px;
+    }
+
+    .mb-10 {
+        margin-bottom: 10px;
+    }
+
+    .mb-30 {
+        margin-bottom: 30px;
+    }
+
+    .gap-10 {
+        gap: 10px;
+    }
+
+    .gap-20 {
+        gap: 20px;
+    }
+
+    .w-395 {
+        width: 395px;
+    }
+
+    .w-430 {
+        width: 430px;
+    }
+
+    .m-10 {
+        margin: 10px;
+    }
+
+    .m-20 {
+        margin: 20px;
+    }
+
+    .mx-30 {
+        margin-left: 30px;
+        margin-right: 30px;
+    }
+
+    .mx-20 {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
     .space_around {
         display: flex;
         justify-content: space-around;
     }
+
     .space_between {
         display: flex;
         justify-content: space-between;
     }
+
     .justify_center {
         display: flex;
         justify-content: center;
     }
+
     .center {
         display: flex;
         align-items: center;
@@ -255,6 +329,7 @@
         border: 1px solid #D0A4FF;
         border-radius: 20px;
     }
+
     .value_box {
         border: 1px solid #ffffff;
         border-radius: 10px;
@@ -268,7 +343,8 @@
         height: 2px;
         border-radius: 2px;
         width: 70%;
-        
+        accent-color: #92FFD9;
+        --thumb-size: 2px;
     }
 </style>
 
@@ -302,4 +378,49 @@ createIcons({
 
         });
     });
+</script>
+
+<script>
+    const degreeSlider = document.getElementById('degree_slider');
+    const degreeValue = document.getElementById('degree_value');
+
+    if (degreeSlider && degreeValue) {
+        const syncDegreeFromSlider = () => {
+            const value = Math.min(Math.max(Number(degreeSlider.value), 1), 6);
+            degreeSlider.value = value;
+            degreeValue.textContent = value;
+        };
+
+        const syncDegreeFromBox = () => {
+            const raw = Number(degreeValue.textContent.trim());
+            if (!Number.isNaN(raw)) {
+                const value = Math.min(Math.max(Math.round(raw), 1), 6);
+                degreeSlider.value = value;
+                degreeValue.textContent = value;
+            }
+        };
+
+        degreeSlider.addEventListener('input', syncDegreeFromSlider);
+        degreeValue.addEventListener('blur', syncDegreeFromBox);
+        degreeValue.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                degreeValue.blur();
+            }
+        });
+
+        syncDegreeFromSlider();
+    }
+
+    const lrSlider = document.getElementById('lr_slider');
+    const lrValue = document.getElementById('lr_val');
+
+    if (lrSlider && lrValue) {
+        const updateLearningRate = () => {
+            lrValue.textContent = lrSlider.value;
+        };
+
+        lrSlider.addEventListener('input', updateLearningRate);
+        updateLearningRate();
+    }
 </script>
