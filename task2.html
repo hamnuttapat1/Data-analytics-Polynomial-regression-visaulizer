@@ -59,6 +59,15 @@
                                 <input type="range" id="degree_slider" min="1" max="6" value="2" class="custom_slider">
                                 <div>6</div>
                             </div>
+                            <div class="flex-row center space_between mx-20 mt-20">
+                                <div class="grey">Learning Rate</div>
+                                <div class="value_box" id="rate_value" contenteditable="true">0.01</div>
+                            </div>
+                            <div class="flex-row center justify_center mt-20 gap-10">
+                                <div>0.001</div>
+                                <input type="range" id="rate_slider" min="0.001" max="0.1" step="0.001" value="0.01" class="custom_slider">
+                                <div>0.1</div>
+                            </div>
                         </div>
                         <div class="setting_box w-395">
 
@@ -339,7 +348,7 @@
         padding: 5px 20px;
     }
 
-    #degree_slider {
+    .custom_slider {
         height: 2px;
         border-radius: 2px;
         width: 70%;
@@ -411,16 +420,44 @@ createIcons({
 
         syncDegreeFromSlider();
     }
+</script>
+<script>
+    const rateSlider = document.getElementById('rate_slider');
+    const rateValue = document.getElementById('rate_value');
 
-    const lrSlider = document.getElementById('lr_slider');
-    const lrValue = document.getElementById('lr_val');
+    if (rateSlider && rateValue) {
+        const syncRateFromSlider = () => {
+            const min = Number(rateSlider.min);
+            const max = Number(rateSlider.max);
+            const value = Math.min(Math.max(Number(rateSlider.value), min), max);
 
-    if (lrSlider && lrValue) {
-        const updateLearningRate = () => {
-            lrValue.textContent = lrSlider.value;
+            rateSlider.value = value;
+            rateValue.textContent = Number(value).toFixed(3);
         };
 
-        lrSlider.addEventListener('input', updateLearningRate);
-        updateLearningRate();
+        const syncRateFromBox = () => {
+            let raw = Number(rateValue.textContent.trim());
+            const min = Number(rateSlider.min);
+            const max = Number(rateSlider.max);
+
+            if (Number.isNaN(raw)) {
+                raw = Number(rateSlider.value);
+            }
+
+            const value = Math.min(Math.max(raw, min), max);
+            rateSlider.value = value;
+            rateValue.textContent = Number(value).toFixed(3);
+        };
+
+        rateSlider.addEventListener('input', syncRateFromSlider);
+        rateValue.addEventListener('blur', syncRateFromBox);
+        rateValue.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                rateValue.blur();
+            }
+        });
+
+        syncRateFromSlider();
     }
 </script>
