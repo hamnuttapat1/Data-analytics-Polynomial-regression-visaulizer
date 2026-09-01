@@ -16,12 +16,12 @@
     <div id="outside" class="flex-row">
         <div class="scroll">
             <div class="canvas" id="canvas_tl">
-                <div class="flex-row space_around">
-                    <div class="flex-row">
+                <div class="flex-row space_between mx-30">
+                    <div class="flex-row center mt-10">
                         <i data-lucide="grip"></i>
-                        <p class="ml-10 font-24 purple">DATA CANVAS</p>
+                        <div class="ml-10 font-24 purple">DATA CANVAS</div>
                     </div>
-                    <div class="mr-20">
+                    <div>
                         <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
                     </div>
                 </div>
@@ -29,9 +29,9 @@
                     <svg id="data-canvas-svg"></svg>
                 </div>
                 <div>
-                    <p class="font-20 ml-20">PRESET DATA SET</p>
+                    <div class="font-20 ml-30">PRESET DATA SET</div>
                 </div>
-                <div class="flex-row ml-20 mr-20 space_around mb-30">
+                <div class="flex-row ml-20 mr-20 space_around mt-10">
                     <button class="button_purple button_preset active">Linear</button>
                     <button class="button_purple button_preset">Curve</button>
                     <button class="button_purple button_preset">Wave</button>
@@ -87,6 +87,7 @@
         font-size: 16px;
         
     }
+    
 
     .font-20 {font-size: 20px;}
     .font-24 {font-size: 24px;}
@@ -106,6 +107,7 @@
     .w-430 {width: 430px;}
     .m-10 {margin: 10px;}
     .m-20 {margin: 20px;}
+    .mx-30 {margin-left: 30px; margin-right: 30px;}
     .space_around {
         display: flex;
         justify-content: space-around;
@@ -113,6 +115,10 @@
     .space_between {
         display: flex;
         justify-content: space-between;
+    }
+    .center {
+        display: flex;
+        align-items: center;
     }
 
     .button_purple {
@@ -158,8 +164,7 @@
 
     .lucide-grip {
         color: #E3C9FF;
-        margin-left: 20px;
-        margin-top: 30px;
+
         width: 16px;
         height: 16px;
     }
@@ -210,8 +215,8 @@
 
     .canvas_instruction {
         margin-top: 30px;
-        flex-grow: 1;
-        text-align: center;
+        /* flex-grow: 1; */
+        /* text-align: center; */
     }
 
     .vertical_divider {
