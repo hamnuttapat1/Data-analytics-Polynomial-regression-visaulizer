@@ -16,10 +16,14 @@
     <div id="outside" class="flex-row">
         <div class="scroll">
             <div class="canvas" id="canvas_tl">
-                <div class="flex-row">
-                    <i data-lucide="grip"></i>
-                    <p class="ml-10 font-24 purple">DATA CANVAS</p>
-                    <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
+                <div class="flex-row space_around">
+                    <div class="flex-row">
+                        <i data-lucide="grip"></i>
+                        <p class="ml-10 font-24 purple">DATA CANVAS</p>
+                    </div>
+                    <div>
+                        <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
+                    </div>
                 </div>
                 <div style="height: 500px; margin: 20px; position: relative;">
                     <svg id="data-canvas-svg"></svg>
@@ -27,7 +31,7 @@
                 <div>
                     <p class="font-20 ml-30">PRESET DATA SET</p>
                 </div>
-                <div class="flex-row ml-30 gap-20">
+                <div class="flex-row ml-30 space_around">
                     <button class="button_purple button_preset active">Linear</button>
                     <button class="button_purple button_preset">Curve</button>
                     <button class="button_purple button_preset">Wave</button>
@@ -98,6 +102,14 @@
     .gap-20 {gap: 20px;}
     .w-395 {width: 395px;}
     .w-430 {width: 430px;}
+    .space_around {
+        display: flex;
+        justify-content: space-around;
+    }
+    .space_between {
+        display: flex;
+        justify-content: space-between;
+    }
 
     .button_purple {
         background-color: #080B10;
@@ -201,8 +213,8 @@
     .vertical_divider {
         width: 1px;
         background-color: #ffffff;
-        margin-left: 20px;
-        margin-right: 20px;
+        /* margin-left: 20px;
+        margin-right: 20px; */
     }
 
     .button_container {
