@@ -21,6 +21,9 @@
                     <p class="ml-10 font-24 purple">DATA CANVAS</p>
                     <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
                 </div>
+                <div style="height: 500px; margin: 20px; position: relative;">
+                    <svg id="data-canvas-svg"></svg>
+                </div>
                 <div>
                     <p class="font-20 ml-30">PRESET DATA SET</p>
                 </div>
@@ -34,12 +37,31 @@
                     <button class="button_purple button_container"><i data-lucide="trash-2"></i>Clear Data</button>
                 </div>
             </div>
-            <div class="canvas" id="canvas_bl"></div>
+            <div class="canvas" id="canvas_bl">
+                <div class="flex-row">
+                    <i data-lucide="settings"></i>  
+                    <p class="purple font-24 ml-10">HYPERPARAMETERS & CONTROL</p>
+                </div>
+                <div>
+                    <div class="flex-row">
+                        <div class="setting_box ml-30 w-430">
+
+                        </div>
+                        <div class="setting_box ml-30 w-395">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="scroll">
-            <div class="canvas" id="canvas_tr"></div>
-            <div class="canvas" id="canvas_br"></div>
+            <div class="canvas" id="canvas_tr">
+
+            </div>
+            <div class="canvas" id="canvas_br">
+
+            </div>
         </div>
     </div>
 
@@ -59,46 +81,30 @@
         color: #FFFFFF;
         font-family: 'IBM Plex Mono', monospace;
         font-size: 16px;
+        
     }
 
-    .font-20 {
-        font-size: 20px;
-    }
-
-    .font-24 {
-        font-size: 24px;
-    }
-
-    .font-36 {
-        font-size: 36px;
-    }
-
-    .purple {
-        color: #E3C9FF;
-    }
-
-    .ml-10 {
-        margin-left: 10px;
-    }
-
-    .ml-20 {
-        margin-left: 20px;
-    }
-
-    .ml-30 {
-        margin-left: 30px;
-    }
-
-    .gap-20 {
-        gap: 20px;
-    }
+    .font-20 {font-size: 20px;}
+    .font-24 {font-size: 24px;}
+    .font-36 {font-size: 36px;}
+    .purple {color: #E3C9FF;}
+    .ml-10 {margin-left: 10px;}
+    .ml-20 {margin-left: 20px;}
+    .ml-30 {margin-left: 30px;}
+    .mt-10 {margin-top: 10px;}
+    .mt-20 {margin-top: 20px;}
+    .mt-30 {margin-top: 30px;}
+    .mt-0 {margin-top: 0px;}
+    .gap-20 {gap: 20px;}
+    .w-395 {width: 395px;}
+    .w-430 {width: 430px;}
 
     .button_purple {
         background-color: #080B10;
         color: #ffffff;
         border: 1px solid #D0A4FF;
         border-radius: 9px;
-        padding: 12px 20px;
+        padding: 15px 25px;
         cursor: pointer;
     }
 
@@ -154,11 +160,19 @@
         height: 16px;
     }
 
+    .lucide-settings {
+        color: #E3C9FF;
+        margin-left: 30px;
+        margin-top: 30px;
+        width: 16px;
+        height: 16px;
+    }
+
     .canvas {
         width: 100%;
         border: 1px solid #ffffff;
         border-radius: 30px;
-        margin-top: 20px;
+        margin-top: 10px;
     }
 
     #canvas_tl {
@@ -196,6 +210,12 @@
         justify-content: center;
         align-items: center;
         gap: 10px;
+    }
+
+    .setting_box {
+        height: 310px;
+        border: 1px solid #D0A4FF;
+        border-radius: 20px;
     }
 </style>
 
