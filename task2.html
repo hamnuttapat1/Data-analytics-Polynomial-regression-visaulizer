@@ -75,7 +75,23 @@
                             </div>
                         </div>
                         <div class="setting_box w-395">
-
+                            <div class="font-20 mt-20 ml-20">EXECUTION CONTROLS</div>
+                            <div class="flex-row space_around mt-20 mx-20">
+                                <button id="reset_button" class="center gap-10">
+                                    <i data-lucide="rotate-ccw"></i>
+                                    <div class="white">Reset</div>
+                                </button>
+                                <button id="step_button" class="center gap-10">
+                                    <div class="white">Step</div>
+                                    <i data-lucide="move-right"></i>  
+                                </button>
+                            </div>
+                            <div id="play_button" class="flex-row center">
+                                <div>Play until Convergence</div>
+                            </div>
+                            <div id="pause_button" class="flex-row center">
+                                <div>Pause</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -130,6 +146,10 @@
 
     .grey {
         color: #BCB9B9;
+    }
+
+    .white {
+        color: #ffffff;
     }
 
     .ml-10 {
@@ -294,6 +314,18 @@
         height: 16px;
     }
 
+    .lucide-rotate-ccw {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-move-right {
+        color: #ffffff;
+        width: 15px;
+        height: 16px;
+    }
+
     .canvas {
         width: 100%;
         border: 1px solid #ffffff;
@@ -402,6 +434,38 @@
         border: none;
         border-radius: 50%;
         background: #92FFD9;
+        cursor: pointer;
+    }
+
+    #reset_button {
+        padding: 15px 40px;
+        background-color: #080B10;
+        border: 1px solid #fffffF;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    #step_button {
+        padding: 15px 40px;
+        background-color: #9B65D5;
+        border: 1px solid #D0A4FF;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    #play_button {
+        padding: 15px 40px;
+        background-color: #9B65D5;
+        border: 1px solid #D0A4FF;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+    
+    #pause_button {
+        padding: 15px 40px;
+        background-color: #9B65D5;
+        border: 1px solid #D0A4FF;
+        border-radius: 9px;
         cursor: pointer;
     }
 </style>
