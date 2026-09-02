@@ -76,20 +76,22 @@
                         </div>
                         <div class="setting_box w-395">
                             <div class="font-20 mt-20 ml-20">EXECUTION CONTROLS</div>
-                            <div class="flex-row space_around mt-20 mx-20">
-                                <button id="reset_button" class="center gap-10">
+                            <div class="flex-row space_around mt-20 mx-10">
+                                <button id="reset_button" class="center gap-10 justify_center">
                                     <i data-lucide="rotate-ccw"></i>
                                     <div class="white">Reset</div>
                                 </button>
-                                <button id="step_button" class="center gap-10">
+                                <button id="step_button" class="center gap-10 justify_center">
                                     <div class="white">Step</div>
                                     <i data-lucide="move-right"></i>  
                                 </button>
                             </div>
-                            <div id="play_button" class="flex-row center">
+                            <div id="play_button" class="flex-row center mx-30 mt-10 gap-10 justify_center">
+                                <i data-lucide="play"></i>  
                                 <div>Play until Convergence</div>
                             </div>
-                            <div id="pause_button" class="flex-row center">
+                            <div id="pause_button" class="flex-row center mx-30 mt-10 gap-10 justify_center">
+                                <i data-lucide="pause"></i>  
                                 <div>Pause</div>
                             </div>
                         </div>
@@ -326,6 +328,18 @@
         height: 16px;
     }
 
+    .lucide-play {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-pause {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+    
     .canvas {
         width: 100%;
         border: 1px solid #ffffff;
@@ -438,7 +452,7 @@
     }
 
     #reset_button {
-        padding: 15px 40px;
+        padding: 13px 40px;
         background-color: #080B10;
         border: 1px solid #fffffF;
         border-radius: 9px;
@@ -446,7 +460,7 @@
     }
 
     #step_button {
-        padding: 15px 40px;
+        padding: 13px 40px;
         background-color: #9B65D5;
         border: 1px solid #D0A4FF;
         border-radius: 9px;
@@ -454,17 +468,17 @@
     }
 
     #play_button {
-        padding: 15px 40px;
-        background-color: #9B65D5;
-        border: 1px solid #D0A4FF;
+        padding: 13px 40px;
+        background-color: #39C493;
+        border: 1px solid #ffffff;
         border-radius: 9px;
         cursor: pointer;
     }
     
     #pause_button {
-        padding: 15px 40px;
-        background-color: #9B65D5;
-        border: 1px solid #D0A4FF;
+        padding: 13px 40px;
+        background-color: #080B10;
+        border: 1px solid #ffffff;
         border-radius: 9px;
         cursor: pointer;
     }
