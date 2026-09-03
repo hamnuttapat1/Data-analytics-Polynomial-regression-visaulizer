@@ -31,7 +31,7 @@
                 <div>
                     <div class="font-20 ml-30">PRESET DATA SET</div>
                 </div>
-                <div class="flex-row ml-20 mr-20 space_around mt-10">
+                <div class="flex-row ml-20 mr-20 space_around mt-10 preset-controls">
                     <button class="button_purple button_preset active" data-preset="linear">Linear</button>
                     <button class="button_purple button_preset" data-preset="curve">Curve</button>
                     <button class="button_purple button_preset" data-preset="wave">Wave</button>
@@ -360,7 +360,8 @@
     }
 
     #canvas_tl {
-        height: 735px;
+        min-height: 735px;
+        height: auto;
 
     }
 
@@ -415,6 +416,29 @@
         background-color: #ffffff;
         /* margin-left: 20px;
         margin-right: 20px; */
+    }
+
+    .preset-controls {
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 10px;
+        padding-bottom: 20px;
+    }
+
+    .preset-controls .button_preset {
+        flex: 1 1 82px;
+        min-width: 72px;
+    }
+
+    .preset-controls .button_container {
+        flex: 1 1 145px;
+        min-width: 125px;
+    }
+
+    .preset-controls .vertical_divider {
+        flex: 0 0 1px;
+        min-height: 42px;
     }
 
     .button_container {
