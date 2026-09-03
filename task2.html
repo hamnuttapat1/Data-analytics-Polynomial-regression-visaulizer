@@ -47,7 +47,7 @@
                     <p class="purple font-24 ml-10">HYPERPARAMETERS & CONTROL</p>
                 </div>
                 <div>
-                    <div class="flex-row m-20 gap-20">
+                    <div class="control-grid m-20">
                         <div class="setting_box w-430">
                             <div class="mt-20 ml-20 mb-10 font-20">MODEL SETTING</div>
                             <div class="flex-row center space_between mx-20">
@@ -365,7 +365,8 @@
     }
 
     #canvas_bl {
-        height: 460px;
+        min-height: 460px;
+        height: auto;
     }
 
     #canvas_tr {
@@ -427,6 +428,49 @@
         height: 310px;
         border: 1px solid #D0A4FF;
         border-radius: 20px;
+    }
+
+    .control-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .control-grid .setting_box {
+        width: auto;
+        min-width: 0;
+        height: auto;
+        min-height: 310px;
+        padding-bottom: 20px;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 1450px) {
+        .control-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .control-grid .setting_box {
+            min-height: 0;
+        }
+    }
+
+    @media (max-width: 900px) {
+        body {
+            overflow: auto;
+        }
+
+        #outside {
+            flex-direction: column;
+            margin-right: 20px;
+        }
+
+        .scroll {
+            width: 100%;
+            height: auto;
+            overflow: visible;
+            padding-right: 0;
+        }
     }
 
     .value_box {
