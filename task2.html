@@ -737,12 +737,17 @@ createIcons({
             context.fillRect(0, 0, width, height);
             context.strokeStyle = '#323131';
             context.lineWidth = 1;
+            context.font = '11px IBM Plex Mono, monospace';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
             for (let x = -5; x <= 5; x++) {
                 const px = xPixel(x, width);
                 context.beginPath();
                 context.moveTo(px, 0);
                 context.lineTo(px, height);
                 context.stroke();
+                context.fillStyle = '#9ca8ba';
+                context.fillText(String(x), px, height - 17);
             }
             for (let y = -4; y <= 4; y += 2) {
                 const py = yPixel(y, height);
@@ -750,9 +755,14 @@ createIcons({
                 context.moveTo(0, py);
                 context.lineTo(width, py);
                 context.stroke();
+                context.fillStyle = '#9ca8ba';
+                context.textAlign = 'right';
+                context.fillText(String(y), 34, py);
             }
             context.fillStyle = '#9ca8ba';
             context.font = '12px IBM Plex Mono, monospace';
+            context.textAlign = 'left';
+            context.textBaseline = 'alphabetic';
             context.fillText('y', 12, 20);
             context.fillText('x', width - 22, height - 12);
 
@@ -802,20 +812,27 @@ createIcons({
             drawGraph();
         }
 
-        canvas.addEventListener('click', event => {
+        function graphCoordinatesFromEvent(event) {
             const bounds = canvas.getBoundingClientRect();
-            points.push({
-                x: -5 + ((event.clientX - bounds.left) / bounds.width) * 10,
-                y: 4 - ((event.clientY - bounds.top) / bounds.height) * 8
-            });
+            const mouseX = event.clientX - bounds.left;
+            const mouseY = event.clientY - bounds.top;
+
+            return {
+                x: -5 + ((mouseX - 42) / (bounds.width - 62)) * 10,
+                y: ((bounds.height - 34 - mouseY) / (bounds.height - 58)) * 8 - 4
+            };
+        }
+
+        canvas.addEventListener('click', event => {
+            const point = graphCoordinatesFromEvent(event);
+            if (point.x < -5 || point.x > 5 || point.y < -4 || point.y > 4) return;
+            points.push(point);
             resetModel();
         });
 
         canvas.addEventListener('contextmenu', event => {
             event.preventDefault();
-            const bounds = canvas.getBoundingClientRect();
-            const x = -5 + ((event.clientX - bounds.left) / bounds.width) * 10;
-            const y = 4 - ((event.clientY - bounds.top) / bounds.height) * 8;
+            const { x, y } = graphCoordinatesFromEvent(event);
             let closest = -1;
             let distance = Infinity;
             points.forEach((point, index) => {
