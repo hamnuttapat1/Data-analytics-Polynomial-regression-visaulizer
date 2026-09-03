@@ -25,20 +25,20 @@
                         <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
                     </div>
                 </div>
-                <div style="height: 500px; margin: 20px; position: relative;">
-                    <svg id="data-canvas-svg"></svg>
+                <div class="model-graph-wrap">
+                    <canvas id="model_graph_canvas"></canvas>
                 </div>
                 <div>
                     <div class="font-20 ml-30">PRESET DATA SET</div>
                 </div>
                 <div class="flex-row ml-20 mr-20 space_around mt-10">
-                    <button class="button_purple button_preset active">Linear</button>
-                    <button class="button_purple button_preset">Curve</button>
-                    <button class="button_purple button_preset">Wave</button>
-                    <button class="button_purple button_preset">Random</button>
+                    <button class="button_purple button_preset active" data-preset="linear">Linear</button>
+                    <button class="button_purple button_preset" data-preset="curve">Curve</button>
+                    <button class="button_purple button_preset" data-preset="wave">Wave</button>
+                    <button class="button_purple button_preset" data-preset="random">Random</button>
                     <div class="vertical_divider"></div>
-                    <button class="button_purple button_container"><i data-lucide="shuffle"></i>Random Data</button>
-                    <button class="button_purple button_container"><i data-lucide="trash-2"></i>Clear Data</button>
+                    <button id="random_data_button" class="button_purple button_container"><i data-lucide="shuffle"></i>Random Data</button>
+                    <button id="clear_data_button" class="button_purple button_container"><i data-lucide="trash-2"></i>Clear Data</button>
                 </div>
             </div>
             <div class="canvas" id="canvas_bl">
@@ -108,12 +108,12 @@
 
         <div class="scroll">
             <div class="canvas" id="canvas_tr">
-                <div class="flex-row center space_between mx-30">
-                    <div>
+                <div class="flex-row center space_between mx-30 model-heading">
+                    <div class="flex-row center gap-10">
                         <i data-lucide="box"></i>  
                         <div>MODEL STATE (STEP-BY-STEP)</div>
                     </div>
-                    <div>STEP </div>
+                    <div id="step_counter">STEP 0 / 100</div>
                 </div>
             </div>
             <div class="canvas" id="canvas_br">
@@ -372,6 +372,33 @@
         height: 735px;
     }
 
+    .model-heading {
+        height: 62px;
+        color: #E3C9FF;
+        font-size: 20px;
+    }
+
+    #step_counter {
+        color: #BCB9B9;
+        font-size: 16px;
+    }
+
+    .model-graph-wrap {
+        height: 500px;
+        margin: 20px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #293246;
+        border-radius: 18px;
+        background: #08111f;
+    }
+
+    #model_graph_canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
     #canvas_br {
         height: 460px;
     }
@@ -623,4 +650,217 @@ createIcons({
         speedSlider.addEventListener('input', syncSpeedSlider);
         syncSpeedSlider();
     }
+</script>
+
+<script>
+    (() => {
+        const canvas = document.getElementById('model_graph_canvas');
+        const context = canvas.getContext('2d');
+        const maxEpochInput = document.getElementById('max_epoch');
+        const stepCounter = document.getElementById('step_counter');
+        const degreeInput = document.getElementById('degree_slider');
+        const rateInput = document.getElementById('rate_slider');
+        const stepButton = document.getElementById('step_button');
+        const resetButton = document.getElementById('reset_button');
+        const playButton = document.getElementById('play_button');
+        const pauseButton = document.getElementById('pause_button');
+        const speedInput = document.getElementById('speed_slider');
+
+        let points = [];
+        let coefficients = [];
+        let epoch = 0;
+        let running = false;
+        let timer = null;
+
+        const degree = () => Number(degreeInput.value);
+        const learningRate = () => Number(rateInput.value);
+        const maxEpoch = () => Math.max(1, Math.round(Number(maxEpochInput.value) || 1));
+        const xPixel = (x, width) => 42 + ((x + 5) / 10) * (width - 62);
+        const yPixel = (y, height) => height - 34 - ((y + 4) / 8) * (height - 58);
+
+        function predict(x) {
+            return coefficients.reduce((sum, value, power) => sum + value * Math.pow(x, power), 0);
+        }
+
+        function updateStepCounter() {
+            maxEpochInput.value = maxEpoch();
+            if (epoch > maxEpoch()) epoch = maxEpoch();
+            stepCounter.textContent = `STEP ${epoch} / ${maxEpoch()}`;
+        }
+
+        function resetModel() {
+            running = false;
+            clearTimeout(timer);
+            epoch = 0;
+            coefficients = Array(degree() + 1).fill(0);
+            coefficients[0] = 0.1;
+            updateStepCounter();
+            drawGraph();
+        }
+
+        function makePoints(type) {
+            points = [];
+            for (let index = 0; index < 26; index++) {
+                const x = -5 + (index * 10 / 25);
+                let y;
+                if (type === 'linear') y = 0.65 * x + 0.4;
+                else if (type === 'wave') y = 1.35 * Math.sin(x * 0.9) + 0.18 * x;
+                else if (type === 'random') y = Math.random() * 5 - 2.5;
+                else y = 1.4 * Math.sin(x * 0.8) + 0.12 * x;
+                points.push({ x, y: y + (Math.random() - 0.5) * 0.55 });
+            }
+            resetModel();
+        }
+
+        function trainOneStep() {
+            if (!points.length || epoch >= maxEpoch()) return;
+            const gradient = Array(coefficients.length).fill(0);
+            points.forEach(point => {
+                const error = predict(point.x) - point.y;
+                gradient.forEach((_, power) => {
+                    gradient[power] += 2 * error * Math.pow(point.x, power) / points.length;
+                });
+            });
+            coefficients = coefficients.map((value, power) =>
+                value - learningRate() * gradient[power] / Math.max(1, Math.pow(3, power))
+            );
+            epoch += 1;
+            updateStepCounter();
+            drawGraph();
+        }
+
+        function drawGraph() {
+            const width = canvas.getBoundingClientRect().width;
+            const height = canvas.getBoundingClientRect().height;
+            context.clearRect(0, 0, width, height);
+            context.fillStyle = '#080B10';
+            context.fillRect(0, 0, width, height);
+            context.strokeStyle = '#323131';
+            context.lineWidth = 1;
+            for (let x = -5; x <= 5; x++) {
+                const px = xPixel(x, width);
+                context.beginPath();
+                context.moveTo(px, 0);
+                context.lineTo(px, height);
+                context.stroke();
+            }
+            for (let y = -4; y <= 4; y += 2) {
+                const py = yPixel(y, height);
+                context.beginPath();
+                context.moveTo(0, py);
+                context.lineTo(width, py);
+                context.stroke();
+            }
+            context.fillStyle = '#9ca8ba';
+            context.font = '12px IBM Plex Mono, monospace';
+            context.fillText('y', 12, 20);
+            context.fillText('x', width - 22, height - 12);
+
+            points.forEach(point => {
+                const px = xPixel(point.x, width);
+                const actualY = yPixel(point.y, height);
+                const predictedY = yPixel(predict(point.x), height);
+                context.setLineDash([4, 4]);
+                context.strokeStyle = '#8793a8';
+                context.beginPath();
+                context.moveTo(px, actualY);
+                context.lineTo(px, predictedY);
+                context.stroke();
+                context.setLineDash([]);
+            });
+
+            if (points.length) {
+                context.strokeStyle = '#92FFD9';
+                context.lineWidth = 2.5;
+                context.beginPath();
+                for (let index = 0; index <= 200; index++) {
+                    const x = -5 + index * 10 / 200;
+                    const px = xPixel(x, width);
+                    const py = yPixel(predict(x), height);
+                    index === 0 ? context.moveTo(px, py) : context.lineTo(px, py);
+                }
+                context.stroke();
+            }
+
+            points.forEach(point => {
+                context.fillStyle = '#D0A4FF';
+                context.strokeStyle = '#f0eaff';
+                context.lineWidth = 1;
+                context.beginPath();
+                context.arc(xPixel(point.x, width), yPixel(point.y, height), 5, 0, Math.PI * 2);
+                context.fill();
+                context.stroke();
+            });
+        }
+
+        function resizeGraph() {
+            const bounds = canvas.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(bounds.width * ratio);
+            canvas.height = Math.round(bounds.height * ratio);
+            context.setTransform(ratio, 0, 0, ratio, 0, 0);
+            drawGraph();
+        }
+
+        canvas.addEventListener('click', event => {
+            const bounds = canvas.getBoundingClientRect();
+            points.push({
+                x: -5 + ((event.clientX - bounds.left) / bounds.width) * 10,
+                y: 4 - ((event.clientY - bounds.top) / bounds.height) * 8
+            });
+            resetModel();
+        });
+
+        canvas.addEventListener('contextmenu', event => {
+            event.preventDefault();
+            const bounds = canvas.getBoundingClientRect();
+            const x = -5 + ((event.clientX - bounds.left) / bounds.width) * 10;
+            const y = 4 - ((event.clientY - bounds.top) / bounds.height) * 8;
+            let closest = -1;
+            let distance = Infinity;
+            points.forEach((point, index) => {
+                const nextDistance = Math.hypot(point.x - x, point.y - y);
+                if (nextDistance < distance) {
+                    distance = nextDistance;
+                    closest = index;
+                }
+            });
+            if (closest >= 0 && distance < 0.7) points.splice(closest, 1);
+            resetModel();
+        });
+
+        document.querySelectorAll('.button_preset').forEach(button => {
+            button.addEventListener('click', () => makePoints(button.dataset.preset));
+        });
+        document.getElementById('random_data_button').addEventListener('click', () => makePoints('random'));
+        document.getElementById('clear_data_button').addEventListener('click', () => {
+            points = [];
+            resetModel();
+        });
+        maxEpochInput.addEventListener('input', updateStepCounter);
+        degreeInput.addEventListener('input', resetModel);
+        stepButton.addEventListener('click', trainOneStep);
+        resetButton.addEventListener('click', resetModel);
+        playButton.addEventListener('click', () => {
+            if (running) return;
+            running = true;
+            const run = () => {
+                if (!running || epoch >= maxEpoch()) {
+                    running = false;
+                    return;
+                }
+                trainOneStep();
+                timer = setTimeout(run, 750 - Number(speedInput.value) * 65);
+            };
+            run();
+        });
+        pauseButton.addEventListener('click', () => {
+            running = false;
+            clearTimeout(timer);
+        });
+        window.addEventListener('resize', resizeGraph);
+
+        makePoints('linear');
+        resizeGraph();
+    })();
 </script>
