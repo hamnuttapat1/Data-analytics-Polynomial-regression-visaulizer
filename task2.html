@@ -159,7 +159,29 @@
                 </section>
             </div>
             <div class="canvas" id="canvas_br">
-
+                <div class="loss-heading flex-row center space_between mx-30">
+                    <div class="flex-row center gap-10 purple">
+                        <i data-lucide="chart-line"></i>
+                        <h2>LOSS GRAPH</h2>
+                    </div>
+                    <span id="loss_status">Ready</span>
+                </div>
+                <div class="loss-legend mx-30">
+                    <span><span class="loss-line-swatch"></span>MSE</span>
+                    <span><span class="loss-line-swatch best-loss-swatch"></span>Best MSE</span>
+                    <span class="grey">Lower is better</span>
+                </div>
+                <div class="loss-graph-wrap">
+                    <canvas id="loss_graph_canvas" role="img" aria-label="Mean squared error by epoch">
+                        Mean squared error history. The latest value appears below the graph.
+                    </canvas>
+                </div>
+                <p id="loss_readout" class="mx-30">No data</p>
+                <p class="loss-help mx-30">Hover over the line to inspect an epoch. The chart includes the initial model at epoch 0.</p>
+                <details class="convergence-rule mx-30">
+                    <summary>When does training converge?</summary>
+                    <p>Training stops when MSE ≤ 1e−10 or the MSE gradient norm ≤ 1e−5. A small gradient means the error changes very little when the coefficients change. Max Epoch is a separate limit.</p>
+                </details>
             </div>
         </div>
     </div>
@@ -456,7 +478,36 @@
     }
 
     #canvas_br {
-        height: 460px;
+        min-height: 460px;
+        height: auto;
+        padding-bottom: 24px;
+        box-sizing: border-box;
+    }
+
+    .loss-heading { min-height: 68px; gap: 12px; flex-wrap: wrap; }
+    .loss-heading h2 { margin: 0; font-size: 20px; font-weight: 500; }
+    #loss_status { color: #bcb9b9; font-size: 13px; }
+    #loss_status[data-state="converged"] { color: #80ffdb; }
+    #loss_status[data-state="stopped"] { color: #ff7070; }
+    .loss-legend { display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 13px; }
+    .loss-legend > span { display: inline-flex; align-items: center; gap: 8px; }
+    .loss-line-swatch { width: 22px; border-top: 2px solid #80ffdb; }
+    .best-loss-swatch { border-color: #c9e63c; border-top-style: dashed; }
+    .loss-graph-wrap { height: 270px; margin: 18px 20px 12px; }
+    #loss_graph_canvas { display: block; width: 100%; height: 100%; }
+    #loss_readout { color: #80ffdb; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .loss-help, .convergence-rule { color: #bcb9b9; font-size: 12px; line-height: 1.6; }
+    .convergence-rule { margin-top: 12px; }
+    .convergence-rule summary { cursor: pointer; color: #e3c9ff; }
+    .convergence-rule p { margin-bottom: 0; }
+    #step_button:disabled { cursor: default; opacity: 0.5; }
+
+    @media (max-width: 600px) {
+        .loss-heading, .loss-legend, #loss_readout, .loss-help, .convergence-rule {
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+        .loss-graph-wrap { margin-left: 10px; margin-right: 10px; }
     }
 
     .canvas_instruction {
@@ -905,6 +956,10 @@ createIcons({
     (() => {
         const canvas = document.getElementById('model_graph_canvas');
         const context = canvas.getContext('2d');
+        const lossCanvas = document.getElementById('loss_graph_canvas');
+        const lossContext = lossCanvas.getContext('2d');
+        const lossStatus = document.getElementById('loss_status');
+        const lossReadout = document.getElementById('loss_readout');
         const maxEpochInput = document.getElementById('max_epoch');
         const stepCounter = document.getElementById('step_counter');
         const degreeInput = document.getElementById('degree_slider');
@@ -923,9 +978,15 @@ createIcons({
         let bestMse = null;
         let lastStepLearningRate = null;
         let trainingError = false;
+        let converged = false;
+        let gradientNorm = null;
+        let lossHistory = [];
+        let inspectedEpoch = null;
         let epoch = 0;
         let running = false;
         let timer = null;
+        const MSE_TOLERANCE = 1e-10;
+        const GRADIENT_TOLERANCE = 1e-5;
 
         const degree = () => Number(degreeInput.value);
         const learningRate = () => Number(rateInput.value);
@@ -940,6 +1001,31 @@ createIcons({
         function calculateMse(model = coefficients) {
             if (!points.length) return null;
             return points.reduce((sum, point) => sum + (predict(point.x, model) - point.y) ** 2, 0) / points.length;
+        }
+
+        function calculateGradient() {
+            const gradient = Array(coefficients.length).fill(0);
+            points.forEach(point => {
+                const error = predict(point.x) - point.y;
+                gradient.forEach((_, power) => {
+                    gradient[power] += 2 * error * Math.pow(point.x, power) / points.length;
+                });
+            });
+            return gradient;
+        }
+
+        function stopTraining() {
+            running = false;
+            clearTimeout(timer);
+            timer = null;
+        }
+
+        function updateConvergence() {
+            gradientNorm = points.length ? Math.hypot(...calculateGradient()) : null;
+            converged = points.length > 0 && Number.isFinite(currentMse) &&
+                (currentMse <= MSE_TOLERANCE ||
+                    (Number.isFinite(gradientNorm) && gradientNorm <= GRADIENT_TOLERANCE));
+            if (converged) stopTraining();
         }
 
         function formatNumber(value, digits = 2) {
@@ -997,21 +1083,29 @@ createIcons({
             document.getElementById('training_message').textContent = trainingError
                 ? 'Training stopped: values became too large. Lower the learning rate or reset the model.'
                 : !points.length ? 'No data — add points or choose a preset.'
+                : converged ? (currentMse <= MSE_TOLERANCE
+                    ? `Converged at epoch ${epoch} — MSE is at or below 1e−10.`
+                    : `Converged at epoch ${epoch} — the MSE gradient norm is at or below 1e−5.`)
                 : epoch >= maxEpoch() ? 'Maximum epoch reached. Increase Max Epoch to continue, or reset.'
                 : running ? 'Training — each epoch updates the curve and all values above.'
                 : epoch ? 'Paused — press Step or Play to continue.'
                 : 'Ready — press Step or Play to train on the graph data.';
+            const status = trainingError ? 'Stopped' : !points.length ? 'No data' : converged ? 'Converged'
+                : epoch >= maxEpoch() ? 'Max epochs' : running ? 'Training' : epoch ? 'Paused' : 'Ready';
+            lossStatus.textContent = status;
+            lossStatus.dataset.state = status.toLowerCase();
+            stepButton.disabled = !points.length || converged || epoch >= maxEpoch();
         }
 
         function updateStepCounter() {
             maxEpochInput.value = maxEpoch();
+            if (epoch >= maxEpoch()) stopTraining();
             stepCounter.textContent = `STEP ${epoch} / ${maxEpoch()}`;
             updateModelState();
         }
 
         function resetModel() {
-            running = false;
-            clearTimeout(timer);
+            stopTraining();
             epoch = 0;
             coefficients = Array(degree() + 1).fill(0);
             coefficients[0] = 0.1;
@@ -1021,8 +1115,12 @@ createIcons({
             bestMse = currentMse;
             lastStepLearningRate = null;
             trainingError = false;
+            lossHistory = currentMse === null ? [] : [{ epoch: 0, mse: currentMse }];
+            inspectedEpoch = null;
+            updateConvergence();
             updateStepCounter();
             drawGraph();
+            drawLossGraph();
         }
 
         function makePoints(type) {
@@ -1040,21 +1138,14 @@ createIcons({
         }
 
         function trainOneStep() {
-            if (!points.length || epoch >= maxEpoch()) return false;
-            const gradient = Array(coefficients.length).fill(0);
-            points.forEach(point => {
-                const error = predict(point.x) - point.y;
-                gradient.forEach((_, power) => {
-                    gradient[power] += 2 * error * Math.pow(point.x, power) / points.length;
-                });
-            });
+            if (!points.length || converged || epoch >= maxEpoch()) return false;
+            const gradient = calculateGradient();
             const nextCoefficients = coefficients.map((value, power) =>
                 value - learningRate() * gradient[power] / Math.max(1, Math.pow(3, power))
             );
             const nextMse = calculateMse(nextCoefficients);
             if (!nextCoefficients.every(Number.isFinite) || !Number.isFinite(nextMse)) {
-                running = false;
-                clearTimeout(timer);
+                stopTraining();
                 trainingError = true;
                 updateModelState();
                 return false;
@@ -1067,10 +1158,124 @@ createIcons({
             lastStepLearningRate = learningRate();
             trainingError = false;
             epoch += 1;
+            lossHistory.push({ epoch, mse: currentMse });
+            inspectedEpoch = null;
+            updateConvergence();
             updateStepCounter();
             drawGraph();
+            drawLossGraph();
             return true;
         }
+
+        function drawLossGraph() {
+            const { width, height } = lossCanvas.getBoundingClientRect();
+            if (width <= 0 || height <= 0) return;
+            const ctx = lossContext;
+            const left = Math.min(86, width * 0.28);
+            const right = Math.max(left + 1, width - 20);
+            const top = 24;
+            const bottom = height - 38;
+            const plotWidth = right - left;
+            const plotHeight = bottom - top;
+            // Normalize before multiplying by pixels, even for very large finite losses.
+            const peak = lossHistory.reduce((max, entry) => Math.max(max, entry.mse), 1e-12);
+            const lastEpoch = Math.max(1, epoch);
+            const px = value => left + (value / lastEpoch) * plotWidth;
+            const py = value => bottom - (value / peak) * plotHeight;
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#080B10';
+            ctx.fillRect(0, 0, width, height);
+            ctx.font = '11px IBM Plex Mono, monospace';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.textBaseline = 'middle';
+            for (let index = 0; index <= 4; index++) {
+                const y = bottom - (index / 4) * plotHeight;
+                ctx.strokeStyle = '#293246';
+                ctx.beginPath();
+                ctx.moveTo(left, y);
+                ctx.lineTo(right, y);
+                ctx.stroke();
+                ctx.fillStyle = '#9ca8ba';
+                ctx.textAlign = 'right';
+                ctx.fillText(formatNumber(peak * (index / 4), 4), left - 8, y);
+            }
+            const tickCount = Math.min(4, lastEpoch);
+            for (let index = 0; index <= tickCount; index++) {
+                const tick = Math.round(index * lastEpoch / tickCount);
+                ctx.fillStyle = '#9ca8ba';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(tick), px(tick), bottom + 16);
+            }
+            ctx.fillStyle = '#bcb9b9';
+            ctx.textAlign = 'left';
+            ctx.fillText('MSE', left, 10);
+            ctx.textAlign = 'right';
+            ctx.fillText('Epoch', right, height - 6);
+            if (!lossHistory.length) {
+                ctx.fillStyle = '#bcb9b9';
+                ctx.textAlign = 'center';
+                ctx.fillText('Add data to track MSE.', left + plotWidth / 2, top + plotHeight / 2);
+                lossReadout.textContent = 'No data — choose a preset or add points to the graph.';
+                lossCanvas.setAttribute('aria-label', 'Loss graph: no data.');
+                return;
+            }
+            ctx.strokeStyle = '#c9e63c';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(left, py(bestMse));
+            ctx.lineTo(right, py(bestMse));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#80ffdb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            lossHistory.forEach((entry, index) => {
+                const x = px(entry.epoch);
+                const y = py(entry.mse);
+                index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            const selected = lossHistory[inspectedEpoch] || lossHistory[lossHistory.length - 1];
+            if (inspectedEpoch !== null) {
+                ctx.strokeStyle = '#8793a8';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 4]);
+                ctx.beginPath();
+                ctx.moveTo(px(selected.epoch), top);
+                ctx.lineTo(px(selected.epoch), bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            ctx.fillStyle = '#80ffdb';
+            ctx.beginPath();
+            ctx.arc(px(selected.epoch), py(selected.mse), 4, 0, Math.PI * 2);
+            ctx.fill();
+            lossReadout.textContent = `Epoch ${selected.epoch} · MSE ${formatNumber(selected.mse, 6)} · Best MSE ${formatNumber(bestMse, 6)}`;
+            lossCanvas.setAttribute('aria-label', `MSE over epochs 0 to ${epoch}. Current MSE ${formatNumber(currentMse, 6)}. Best MSE ${formatNumber(bestMse, 6)}.`);
+        }
+
+        function resizeLossGraph() {
+            const bounds = lossCanvas.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            lossCanvas.width = Math.round(bounds.width * ratio);
+            lossCanvas.height = Math.round(bounds.height * ratio);
+            lossContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+            drawLossGraph();
+        }
+
+        lossCanvas.addEventListener('pointermove', event => {
+            if (!lossHistory.length) return;
+            const bounds = lossCanvas.getBoundingClientRect();
+            const left = Math.min(86, bounds.width * 0.28);
+            const fraction = (event.clientX - bounds.left - left) / Math.max(1, bounds.width - 20 - left);
+            inspectedEpoch = Math.max(0, Math.min(epoch, Math.round(fraction * Math.max(1, epoch))));
+            drawLossGraph();
+        });
+        lossCanvas.addEventListener('pointerleave', () => {
+            inspectedEpoch = null;
+            drawLossGraph();
+        });
 
         function drawGraph() {
             const width = canvas.getBoundingClientRect().width;
@@ -1225,27 +1430,32 @@ createIcons({
         stepButton.addEventListener('click', trainOneStep);
         resetButton.addEventListener('click', resetModel);
         playButton.addEventListener('click', () => {
-            if (running || !points.length || epoch >= maxEpoch()) return;
+            if (running || !points.length || converged || epoch >= maxEpoch()) return;
             running = true;
             const run = () => {
-                if (!running || !points.length || epoch >= maxEpoch()) {
-                    running = false;
+                if (!running || !points.length || converged || epoch >= maxEpoch()) {
+                    stopTraining();
                     updateModelState();
                     return;
                 }
                 if (!trainOneStep()) return;
-                timer = setTimeout(run, 750 - Number(speedInput.value) * 65);
+                if (running) timer = setTimeout(run, 750 - Number(speedInput.value) * 65);
             };
             run();
         });
         pauseButton.addEventListener('click', () => {
-            running = false;
-            clearTimeout(timer);
+            stopTraining();
             updateModelState();
         });
         window.addEventListener('resize', resizeGraph);
+        window.addEventListener('resize', resizeLossGraph);
+        if (typeof ResizeObserver !== 'undefined') {
+            const lossResizeObserver = new ResizeObserver(resizeLossGraph);
+            lossResizeObserver.observe(lossCanvas.parentElement);
+        }
 
         makePoints('linear');
         resizeGraph();
+        resizeLossGraph();
     })();
 </script>
