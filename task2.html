@@ -655,15 +655,26 @@
         box-sizing: border-box;
         background: #000;
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
-        column-gap: 0.3em;
         font-size: clamp(22px, 4.3cqi, 36px);
         justify-content: center;
         font-variant-numeric: tabular-nums;
     }
 
-    .equation-term { white-space: nowrap; }
+    .equation-expression {
+        min-width: 0;
+        max-width: 100%;
+        text-align: center;
+        line-height: 1.4;
+    }
+    .equation-term { display: inline-block; white-space: nowrap; }
+    .equation-term sup {
+        font-size: 0.65em;
+        line-height: 0;
+        vertical-align: baseline;
+        position: relative;
+        top: -0.55em;
+    }
     .equation-coefficient { color: #80ffdb; }
     .current-model-heading { flex-wrap: wrap; margin-top: 24px; }
 
@@ -943,11 +954,11 @@ createIcons({
 
         function updateModelState() {
             document.getElementById('model_degree').textContent = `(Degree = ${degree()})`;
-            document.getElementById('model_equation').innerHTML = '<span>ŷ =</span>' + coefficients.map((value, power) => {
+            document.getElementById('model_equation').innerHTML = '<span class="equation-expression"><span class="equation-term">ŷ =</span> ' + coefficients.map((value, power) => {
                 const sign = value < 0 ? '− ' : power > 0 ? '+ ' : '';
                 const variable = power === 0 ? '' : power === 1 ? 'x' : `x<sup>${power}</sup>`;
                 return `<span class="equation-term">${sign}<span class="equation-coefficient" title="${value}">${formatNumber(Math.abs(value))}</span>${variable}</span>`;
-            }).join('');
+            }).join(' ') + '</span>';
             document.getElementById('coefficient_rows').innerHTML = coefficients.map((value, power) => {
                 const delta = value - previousCoefficients[power];
                 const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'zero';
