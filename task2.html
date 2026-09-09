@@ -416,7 +416,9 @@
     }
 
     #canvas_tr {
+        height: auto;
         min-height: 735px;
+        overflow: visible;
         padding: 12px 0 20px;
         box-sizing: border-box;
         container-type: inline-size;
@@ -754,10 +756,7 @@
 
     @media (min-width: 901px) {
         #canvas_tr {
-            height: var(--data-panel-height, 737px);
-            min-height: 0;
-            overflow-y: auto;
-            scrollbar-width: thin;
+            min-height: var(--data-panel-height, 737px);
         }
     }
 
@@ -1156,7 +1155,7 @@ createIcons({
             drawGraph();
         }
 
-        // Match the two top panels even when the graph's preset controls wrap.
+        // Use the graph panel's height as a minimum; let model content grow below it.
         const dataPanel = document.getElementById('canvas_tl');
         const modelPanel = document.getElementById('canvas_tr');
         let lastPanelHeight = 0;
