@@ -177,10 +177,12 @@
                     </canvas>
                 </div>
                 <p id="loss_readout" class="mx-30">No data</p>
-                <p class="loss-help mx-30">Hover over the line to inspect an epoch. The chart includes the initial model at epoch 0.</p>
+                <p class="loss-help mx-30">Hover over the line to inspect an epoch. The chart includes the initial model
+                    at epoch 0.</p>
                 <details class="convergence-rule mx-30">
                     <summary>When does training converge?</summary>
-                    <p>Training stops when MSE ≤ 1e−10 or the MSE gradient norm ≤ 1e−5. A small gradient means the error changes very little when the coefficients change. Max Epoch is a separate limit.</p>
+                    <p>Training stops when MSE ≤ 1e−10 or the MSE gradient norm ≤ 1e−5. A small gradient means the error
+                        changes very little when the coefficients change. Max Epoch is a separate limit.</p>
                 </details>
             </div>
         </div>
@@ -188,11 +190,11 @@
 
 </body>
 <footer>
-    <div class="flex-row space_between">
-        <p>67011213 Nuttapat Wuttiutadom, 67011137 Kempetchompoo Wongyutthachak</p>
-        <p>CEi KMITL</p>
+    <div class="flex-row space_between center">
+        <p class="font-14">67011213 Nuttapat Wuttiutadom, 67011137 Kempetchompoo Wongyutthachak</p>
+        <p class="">CEi KMITL</p>
     </div>
-    
+
 </footer>
 
 </html>
@@ -209,6 +211,9 @@
 
     }
 
+    .font-14 {
+        font-size: 12px;
+    }
 
     .font-20 {
         font-size: 20px;
@@ -257,9 +262,11 @@
     .mt-30 {
         margin-top: 30px;
     }
+
     .mt-40 {
         margin-top: 40px;
     }
+
     .mt-0 {
         margin-top: 0px;
     }
@@ -275,6 +282,7 @@
     .mb-30 {
         margin-bottom: 30px;
     }
+
     .mb-20 {
         margin-bottom: 20px;
     }
@@ -286,6 +294,7 @@
     .gap-20 {
         gap: 20px;
     }
+
     .gap-30 {
         gap: 30px;
     }
@@ -305,9 +314,11 @@
     .m-20 {
         margin: 20px;
     }
+
     .m-30 {
         margin: 30px;
     }
+
     .mx-30 {
         margin-left: 30px;
         margin-right: 30px;
@@ -317,18 +328,22 @@
         margin-left: 20px;
         margin-right: 20px;
     }
+
     .my-20 {
         margin-top: 20px;
         margin-bottom: 20px;
     }
+
     .my-30 {
         margin-top: 30px;
         margin-bottom: 30px;
     }
+
     .my-50 {
         margin-top: 50px;
         margin-bottom: 50px;
     }
+
     .space_around {
         display: flex;
         justify-content: space-around;
@@ -506,30 +521,111 @@
         box-sizing: border-box;
     }
 
-    .loss-heading { min-height: 68px; gap: 12px; flex-wrap: wrap; }
-    .loss-heading h2 { margin: 0; font-size: 20px; font-weight: 500; }
-    #loss_status { color: #bcb9b9; font-size: 13px; }
-    #loss_status[data-state="converged"] { color: #80ffdb; }
-    #loss_status[data-state="stopped"] { color: #ff7070; }
-    .loss-legend { display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 13px; }
-    .loss-legend > span { display: inline-flex; align-items: center; gap: 8px; }
-    .loss-line-swatch { width: 22px; border-top: 2px solid #80ffdb; }
-    .best-loss-swatch { border-color: #c9e63c; border-top-style: dashed; }
-    .loss-graph-wrap { height: 270px; margin: 18px 20px 12px; }
-    #loss_graph_canvas { display: block; width: 100%; height: 100%; }
-    #loss_readout { color: #80ffdb; font-size: 14px; font-variant-numeric: tabular-nums; }
-    .loss-help, .convergence-rule { color: #bcb9b9; font-size: 12px; line-height: 1.6; }
-    .convergence-rule { margin-top: 12px; }
-    .convergence-rule summary { cursor: pointer; color: #e3c9ff; }
-    .convergence-rule p { margin-bottom: 0; }
-    #step_button:disabled { cursor: default; opacity: 0.5; }
+    .loss-heading {
+        min-height: 68px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .loss-heading h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 500;
+    }
+
+    #loss_status {
+        color: #bcb9b9;
+        font-size: 13px;
+    }
+
+    #loss_status[data-state="converged"] {
+        color: #80ffdb;
+    }
+
+    #loss_status[data-state="stopped"] {
+        color: #ff7070;
+    }
+
+    .loss-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        font-size: 13px;
+    }
+
+    .loss-legend>span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .loss-line-swatch {
+        width: 22px;
+        border-top: 2px solid #80ffdb;
+    }
+
+    .best-loss-swatch {
+        border-color: #c9e63c;
+        border-top-style: dashed;
+    }
+
+    .loss-graph-wrap {
+        height: 270px;
+        margin: 18px 20px 12px;
+    }
+
+    #loss_graph_canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loss_readout {
+        color: #80ffdb;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .loss-help,
+    .convergence-rule {
+        color: #bcb9b9;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .convergence-rule {
+        margin-top: 12px;
+    }
+
+    .convergence-rule summary {
+        cursor: pointer;
+        color: #e3c9ff;
+    }
+
+    .convergence-rule p {
+        margin-bottom: 0;
+    }
+
+    #step_button:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
 
     @media (max-width: 600px) {
-        .loss-heading, .loss-legend, #loss_readout, .loss-help, .convergence-rule {
+
+        .loss-heading,
+        .loss-legend,
+        #loss_readout,
+        .loss-help,
+        .convergence-rule {
             margin-left: 20px;
             margin-right: 20px;
         }
-        .loss-graph-wrap { margin-left: 10px; margin-right: 10px; }
+
+        .loss-graph-wrap {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
     }
 
     .canvas_instruction {
@@ -742,7 +838,12 @@
         text-align: center;
         line-height: 1.4;
     }
-    .equation-term { display: inline-block; white-space: nowrap; }
+
+    .equation-term {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
     .equation-term sup {
         font-size: 0.65em;
         line-height: 0;
@@ -750,8 +851,15 @@
         position: relative;
         top: -0.55em;
     }
-    .equation-coefficient { color: #80ffdb; }
-    .current-model-heading { flex-wrap: wrap; margin-top: 24px; }
+
+    .equation-coefficient {
+        color: #80ffdb;
+    }
+
+    .current-model-heading {
+        flex-wrap: wrap;
+        margin-top: 24px;
+    }
 
     .model-cards {
         display: grid;
@@ -773,13 +881,17 @@
         font-variant-numeric: tabular-nums;
     }
 
-    .model_card h2, .how-it-works h2 {
+    .model_card h2,
+    .how-it-works h2 {
         font-size: inherit;
         font-weight: 500;
         margin: 6px 0 16px;
     }
 
-    .model_card h2 { text-align: center; }
+    .model_card h2 {
+        text-align: center;
+    }
+
     .coefficient-row {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.4fr);
@@ -788,26 +900,66 @@
         padding: 12px 4px;
     }
 
-    .coefficient-row + .coefficient-row { border-top: 1px solid #777; }
-    .coefficient-value, .coefficient-delta { text-align: right; overflow-wrap: anywhere; }
-    .delta-up { color: #92ed00; }
-    .delta-down { color: #ff3030; }
-    .delta-zero { color: #bcb9b9; }
+    .coefficient-row+.coefficient-row {
+        border-top: 1px solid #777;
+    }
+
+    .coefficient-value,
+    .coefficient-delta {
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .delta-up {
+        color: #92ed00;
+    }
+
+    .delta-down {
+        color: #ff3030;
+    }
+
+    .delta-zero {
+        color: #bcb9b9;
+    }
+
     .coefficient-change {
         padding: 12px 0;
         text-align: center;
     }
+
     .training-stats {
         margin: 0 clamp(4px, 2cqi, 22px);
         font-size: 14px;
         line-height: 1.35;
     }
-    .training-stats dt { margin-top: 6px; }
-    .training-stats dt:first-child { margin-top: 0; }
-    .training-stats dd { margin: 4px 0 0; overflow-wrap: anywhere; }
-    #training_epoch { color: #d0a4ff; font-size: 18px; }
-    #current_mse { color: #80ffdb; font-size: 18px; }
-    #best_mse { color: #c9e63c; font-size: 18px; }
+
+    .training-stats dt {
+        margin-top: 6px;
+    }
+
+    .training-stats dt:first-child {
+        margin-top: 0;
+    }
+
+    .training-stats dd {
+        margin: 4px 0 0;
+        overflow-wrap: anywhere;
+    }
+
+    #training_epoch {
+        color: #d0a4ff;
+        font-size: 18px;
+    }
+
+    #current_mse {
+        color: #80ffdb;
+        font-size: 18px;
+    }
+
+    #best_mse {
+        color: #c9e63c;
+        font-size: 18px;
+    }
 
     .how-it-works {
         margin-top: 40px;
@@ -820,12 +972,35 @@
         background: #000;
     }
 
-    .how-it-works h2 { font-size: 16px; margin: 0 0 10px; }
-    .how-it-works ol { margin: 0; padding-left: 2ch; }
-    .how-it-works li { color: #8c8c8c; line-height: 1.65; padding-left: 0.2ch; }
-    .how-it-works li.active { color: #e3c9ff; }
-    .how-it-works li::marker { content: counter(list-item) " "; }
-    #training_message { color: #bcb9b9; font-size: 12px; margin: 10px 0 0; }
+    .how-it-works h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+    }
+
+    .how-it-works ol {
+        margin: 0;
+        padding-left: 2ch;
+    }
+
+    .how-it-works li {
+        color: #8c8c8c;
+        line-height: 1.65;
+        padding-left: 0.2ch;
+    }
+
+    .how-it-works li.active {
+        color: #e3c9ff;
+    }
+
+    .how-it-works li::marker {
+        content: counter(list-item) " ";
+    }
+
+    #training_message {
+        color: #bcb9b9;
+        font-size: 12px;
+        margin: 10px 0 0;
+    }
 
     @media (min-width: 901px) {
         #canvas_tr {
@@ -834,16 +1009,40 @@
     }
 
     @container model-state (max-width: 540px) {
-        .model-cards { grid-template-columns: 1fr; gap: 16px; }
-        .model_card { min-height: 0; font-size: 16px; }
-        .model_card h2 { margin-bottom: 14px; }
-        .model-heading { font-size: 18px; }
-        .how-it-works { padding: 20px; }
+        .model-cards {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .model_card {
+            min-height: 0;
+            font-size: 16px;
+        }
+
+        .model_card h2 {
+            margin-bottom: 14px;
+        }
+
+        .model-heading {
+            font-size: 18px;
+        }
+
+        .how-it-works {
+            padding: 20px;
+        }
     }
 
     @container model-state (max-width: 360px) {
-        .mx-30, .equation { margin-left: 16px; margin-right: 16px; }
-        .model_card { font-size: 14px; }
+
+        .mx-30,
+        .equation {
+            margin-left: 16px;
+            margin-right: 16px;
+        }
+
+        .model_card {
+            font-size: 14px;
+        }
     }
 </style>
 
@@ -1105,13 +1304,13 @@ createIcons({
             document.getElementById('training_message').textContent = trainingError
                 ? 'Training stopped: values became too large. Lower the learning rate or reset the model.'
                 : !points.length ? 'No data — add points or choose a preset.'
-                : converged ? (currentMse <= MSE_TOLERANCE
-                    ? `Converged at epoch ${epoch} — MSE is at or below 1e−10.`
-                    : `Converged at epoch ${epoch} — the MSE gradient norm is at or below 1e−5.`)
-                : epoch >= maxEpoch() ? 'Maximum epoch reached. Increase Max Epoch to continue, or reset.'
-                : running ? 'Training — each epoch updates the curve and all values above.'
-                : epoch ? 'Paused — press Step or Play to continue.'
-                : 'Ready — press Step or Play to train on the graph data.';
+                    : converged ? (currentMse <= MSE_TOLERANCE
+                        ? `Converged at epoch ${epoch} — MSE is at or below 1e−10.`
+                        : `Converged at epoch ${epoch} — the MSE gradient norm is at or below 1e−5.`)
+                        : epoch >= maxEpoch() ? 'Maximum epoch reached. Increase Max Epoch to continue, or reset.'
+                            : running ? 'Training — each epoch updates the curve and all values above.'
+                                : epoch ? 'Paused — press Step or Play to continue.'
+                                    : 'Ready — press Step or Play to train on the graph data.';
             const status = trainingError ? 'Stopped' : !points.length ? 'No data' : converged ? 'Converged'
                 : epoch >= maxEpoch() ? 'Max epochs' : running ? 'Training' : epoch ? 'Paused' : 'Ready';
             lossStatus.textContent = status;
