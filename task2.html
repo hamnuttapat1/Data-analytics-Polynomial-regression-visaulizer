@@ -1,406 +1,1682 @@
 <!DOCTYPE html>
-<html lang="en">
+
+<html>
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Learn polynomial regression visually. Create data, adjust the degree, and watch gradient descent fit a curve one epoch at a time.">
-  <meta name="theme-color" content="#0b0e16">
-  <title>Polynomial Regression Visualizer</title>
-  <style>
-    :root { color-scheme:dark; --bg:#0b0e16; --panel:#121722; --surface:#0d121d; --line:#2b3345; --text:#eef0f7; --muted:#9ca8bd; --purple:#ceb0ff; --mint:#79e4c1; --amber:#efc37d; }
-    * { box-sizing:border-box; }
-    body { margin:0; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); color:var(--text); font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
-    button,input,select { font:inherit; }
-    button,select,input[type=number] { border:1px solid var(--line); border-radius:8px; background:#191f2d; color:var(--text); }
-    button { min-height:38px; padding:8px 13px; cursor:pointer; transition:background .15s,border-color .15s; }
-    button:hover:not(:disabled) { background:#28233b; border-color:var(--purple); }
-    button:disabled { opacity:.4; cursor:not-allowed; }
-    button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,[tabindex]:focus-visible { outline:2px solid var(--mint); outline-offset:3px; }
-    input[type=number] { width:82px; padding:6px 9px; font-variant-numeric:tabular-nums; }
-    input[type=range] { width:100%; margin:12px 0 4px; accent-color:var(--mint); cursor:pointer; }
-    select { width:100%; padding:9px; }
-    h1,h2,h3,p { margin:0; }
-    h1 { font-size:clamp(23px,2.2vw,32px); letter-spacing:-.8px; line-height:1.2; }
-    h2 { font-size:15px; font-weight:650; letter-spacing:.15px; }
-    h3 { font-size:11px; text-transform:uppercase; letter-spacing:1.3px; color:var(--muted); margin-bottom:16px; }
-    .header { padding:20px 28px 17px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-shrink:0; }
-    .header p { color:var(--muted); margin-top:7px; font-size:13px; }
-    .eyebrow { color:var(--purple); font:10px/1.5 ui-monospace,monospace; letter-spacing:1.7px; margin-bottom:5px; }
-    .header-badge { color:var(--mint); border:1px solid #2b5149; background:#12231f; border-radius:30px; padding:7px 12px; font-size:11px; white-space:nowrap; }
-    main { flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; padding:0 22px; }
-    .column { min-width:0; min-height:0; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; scrollbar-color:#485168 transparent; scrollbar-gutter:stable; padding:0 6px 16px 0; overscroll-behavior:contain; }
-    .panel { border:1px solid var(--line); border-radius:17px; background:var(--panel); box-shadow:0 8px 24px #0002; margin-bottom:16px; }
-    .top-panel { min-height:var(--top-height,650px); }
-    .bottom-panel { min-height:var(--bottom-height,530px); }
-    .panel-content { padding:20px; }
-    .panel-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:17px; }
-    .panel-title { display:flex; align-items:center; gap:10px; }
-    .section-number { width:26px; height:26px; display:grid; place-items:center; background:#29243b; border:1px solid #463759; color:var(--purple); border-radius:7px; font:11px ui-monospace,monospace; }
-    .hint { color:var(--muted); font-size:12px; line-height:1.65; }
-    .badge { font:11px ui-monospace,monospace; color:var(--muted); background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
-    .toolbar,.button-row,.legend { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
-    .toolbar { justify-content:space-between; margin-bottom:12px; }
-    .segmented { display:flex; gap:3px; background:var(--surface); border:1px solid var(--line); padding:3px; border-radius:9px; }
-    .segmented button { background:transparent; border-color:transparent; min-height:30px; padding:4px 10px; font-size:12px; }
-    .segmented button[aria-pressed=true],.preset[aria-pressed=true] { color:var(--purple); border-color:#65517f; background:#302640; }
-    .chart-wrap { height:clamp(290px,37vh,390px); position:relative; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface); }
-    canvas { display:block; width:100%; height:100%; }
-    #model_graph_canvas { cursor:crosshair; touch-action:manipulation; }
-    .legend { gap:16px; color:var(--muted); font-size:11px; margin:11px 0 17px; }
-    .legend span { display:inline-flex; align-items:center; gap:6px; }
-    .dot { width:7px; height:7px; border-radius:50%; background:var(--purple); }
-    .swatch { width:17px; border-top:2px solid var(--mint); }
-    .residual-swatch { border-top:1px dashed #8793a8; }
-    .best-swatch { border-top:1px dashed var(--amber); }
-    .preset-label { font-size:10px; color:var(--muted); letter-spacing:1px; margin-bottom:8px; text-transform:uppercase; }
-    .presets button { flex:1; font-size:12px; padding:8px; white-space:nowrap; }
-    .data-actions { margin-top:9px; }
-    .data-actions button { font-size:12px; }
-    .data-actions .hint { margin-left:auto; }
-    .manual-entry { margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
-    summary { color:var(--purple); font-size:12px; cursor:pointer; }
-    .manual-form { margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
-    .manual-form label { display:flex; align-items:center; gap:6px; }
-    .manual-form input { width:74px; }
-    .control-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-    .setting-box { min-width:0; border:1px solid var(--line); border-radius:11px; padding:16px; background:var(--surface); }
-    .field { margin-top:20px; }
-    .field:first-of-type { margin-top:0; }
-    .field-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; }
-    .range-labels { display:flex; justify-content:space-between; color:var(--muted); font:10px ui-monospace,monospace; }
-    .field .hint { margin-top:7px; font-size:11px; }
-    .button-row > button { flex:1; }
-    .primary { background:#7853a8; border-color:#ab84db; }
-    .play { display:block; width:100%; margin-top:10px; background:#225744; border-color:#40866c; color:#ddfff2; font-size:12px; }
-    #pause_button { display:block; width:100%; margin-top:10px; font-size:12px; }
-    .learning-note { border-left:2px solid var(--purple); padding-left:12px; margin-top:20px; }
-    .learning-note strong { display:block; font-size:12px; margin-bottom:5px; font-weight:600; }
-    .learning-note p { font-size:12px; color:var(--muted); }
-    .equation-box { background:var(--surface); border:1px solid #40344f; border-radius:10px; padding:14px; margin-bottom:13px; }
-    .equation { color:var(--mint); font:clamp(14px,1.3vw,20px)/1.8 ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; }
-    .equation-term { white-space:nowrap; display:inline-block; }
-    .equation-box .hint { margin-top:6px; font-size:11px; }
-    .stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:13px 0; }
-    .stat { background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:10px 12px; min-width:0; }
-    .stat dt { color:var(--muted); font-size:10px; margin-bottom:3px; }
-    .stat dd { font:17px/1.4 ui-monospace,monospace; margin:0; color:var(--mint); overflow-wrap:anywhere; }
-    .stat:first-child dd { color:var(--purple); }
-    .stat:last-child dd { color:var(--amber); }
-    .table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:9px; }
-    table { width:100%; border-collapse:collapse; font:11px/1.5 ui-monospace,monospace; font-variant-numeric:tabular-nums; }
-    caption { padding:9px 10px; text-align:left; color:var(--muted); background:var(--surface); font:11px system-ui,sans-serif; }
-    th,td { padding:7px 9px; text-align:right; white-space:nowrap; border-bottom:1px solid #252d3e; }
-    th { font-size:10px; color:var(--muted); font-weight:400; background:var(--surface); }
-    td:first-child,th:first-child { text-align:left; }
-    tbody tr:last-child td { border-bottom:0; }
-    td.current { color:var(--mint); }
-    .delta-positive { color:var(--purple); }
-    .delta-negative { color:var(--amber); }
-    .math-steps { margin:16px 0 0; padding:0; list-style:none; display:grid; gap:8px; counter-reset:steps; }
-    .math-steps li { display:grid; grid-template-columns:23px 1fr; gap:8px; color:var(--muted); font-size:11px; }
-    .math-steps li:before { counter-increment:steps; content:counter(steps); background:#29243b; color:var(--purple); border-radius:5px; height:21px; display:grid; place-items:center; font:10px/21px ui-monospace,monospace; }
-    .math-steps strong { color:var(--text); font-weight:550; }
-    .formula { font-family:ui-monospace,Consolas,monospace; color:#d6dce9; }
-    .worked-example { background:var(--surface); border:1px solid var(--line); border-radius:9px; padding:11px 13px; margin-top:14px; }
-    .worked-example p { color:var(--muted); font-size:11px; margin-top:5px; overflow-wrap:anywhere; }
-    .worked-example strong { font-size:11px; color:var(--purple); }
-    .status-message { margin-top:13px; font-size:11px; color:var(--muted); min-height:34px; }
-    #loss_status[data-state=converged] { color:var(--mint); }
-    #loss_status[data-state=limit] { color:var(--amber); }
-    .loss-chart { height:270px; margin-top:16px; }
-    .loss-readout { color:var(--mint); font:11px/1.8 ui-monospace,monospace; margin-top:12px; }
-    .loss-progress { height:4px; border-radius:3px; background:#293143; margin:13px 0 8px; overflow:hidden; }
-    .loss-progress span { display:block; height:100%; background:var(--mint); transition:width .2s; }
-    .convergence-rule { margin-top:16px; padding-top:13px; border-top:1px solid var(--line); }
-    .convergence-rule p { margin-top:8px; }
-    footer { flex-shrink:0; padding:10px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid #1e2533; color:var(--muted); font-size:10px; line-height:1.5; }
-    .members { display:flex; flex-wrap:wrap; gap:3px 18px; }
-    footer strong { white-space:nowrap; color:var(--purple); font-size:11px; letter-spacing:.7px; }
-    @media(min-width:1600px) { .panel-content { padding:24px; } .chart-wrap { height:390px; } .loss-chart { height:270px; } }
-    @media(max-width:1100px) and (min-width:761px) { .control-grid { grid-template-columns:1fr; } .presets { gap:5px; } .panel-content { padding:16px; } .data-actions .hint { width:100%; margin:0; } }
-    @media(max-width:760px) { body { height:auto; min-height:100dvh; overflow:auto; } .header { padding:20px 16px; } .header-badge { display:none; } .header p { font-size:12px; } main { display:flex; flex-direction:column; gap:0; padding:0 12px; overflow:visible; } .column { overflow:visible; padding:0; } .panel-content { padding:16px; } .top-panel,.bottom-panel { min-height:0; } .chart-wrap { height:310px; } .loss-chart { height:270px; } .equation { font-size:16px; } footer { padding:12px 16px; } .members { display:grid; gap:3px; } }
-    @media(max-width:560px) { .control-grid { grid-template-columns:1fr; } }
-    @media(max-width:420px) { .presets { gap:5px; } .presets button { font-size:11px; padding:7px; } .stats { gap:6px; } .stat { padding:9px; } .stat dd { font-size:14px; } th,td { padding:7px 5px; font-size:10px; } .data-actions .hint { width:100%; margin:0; } }
-    @media(prefers-reduced-motion:reduce) { * { transition:none!important; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polynomial regression</title>
 </head>
+
 <body>
-  <header class="header">
-    <div><div class="eyebrow">INTERACTIVE ALGORITHM LAB</div><h1>Polynomial Regression <span style="color:var(--purple)">Visualizer</span></h1><p>A curved line, learned one step at a time. See how gradient descent reduces prediction error.</p></div>
-    <span class="header-badge">Supervised learning · Regression</span>
-  </header>
-  <main id="outside" aria-label="Polynomial regression workspace">
-    <div class="column" id="left_column" tabindex="0" role="region" aria-label="Data and controls. Scroll independently.">
-      <section class="panel top-panel" id="canvas_tl" aria-labelledby="data_heading">
-        <div class="panel-content">
-          <div class="panel-heading"><div class="panel-title"><span class="section-number">01</span><h2 id="data_heading">Data canvas</h2></div><span class="badge" id="point_count">26 points</span></div>
-          <div class="toolbar"><div class="segmented" aria-label="Canvas interaction mode"><button data-mode="add" aria-pressed="true">+ Add</button><button data-mode="remove" aria-pressed="false">− Remove</button><button data-mode="inspect" aria-pressed="false">Inspect</button></div><label class="hint"><input id="show_residuals" type="checkbox" checked> Show errors</label></div>
-          <div class="chart-wrap"><canvas id="model_graph_canvas" role="img" aria-label="Data points and current polynomial fit. Use the coordinate form below to add points with a keyboard."></canvas></div>
-          <div class="legend"><span><i class="dot"></i>Observed data</span><span><i class="swatch"></i>Predicted curve</span><span><i class="swatch residual-swatch"></i>Prediction error</span></div>
-          <p class="preset-label">Generate a dataset</p>
-          <div class="button-row presets"><button class="preset" data-preset="linear" aria-pressed="false">Linear</button><button class="preset" data-preset="curve" aria-pressed="true">Quadratic</button><button class="preset" data-preset="wave" aria-pressed="false">Wave</button><button class="preset" data-preset="random" id="random_data_button" aria-pressed="false">Random data</button></div>
-          <div class="button-row data-actions"><button id="clear_data_button" style="flex:0 0 auto">Clear data</button><span class="hint" id="canvas_instruction">Click to add. Right-click a point to remove.</span></div>
-          <details class="manual-entry"><summary>Add or delete a point using coordinates</summary>
-            <form class="manual-form" id="point_form"><label for="point_x">x <input id="point_x" type="number" min="-5" max="5" step="any" value="0" required></label><label for="point_y">y <input id="point_y" type="number" min="-4" max="4" step="any" value="1" required></label><button type="submit">Add point</button><button type="button" id="delete_selected">Delete selected</button></form>
-            <p class="hint" id="selected_point_text">Inspect a point on the canvas or choose one below.</p><label class="hint" for="point_select">Selected point</label><select id="point_select" aria-label="Select a data point"></select>
-          </details>
+    <h1 id="topic_name" class="font-36 purple">Polynomial Regression Visaulizer</h1>
+    <ul>
+        <li class="font-20">Explore how a polynomial curve learns to fit data by minimizing prediction error (MSE).
+        </li>
+    </ul>
+
+    <div id="outside" class="flex-row">
+        <div class="scroll">
+            <div class="canvas" id="canvas_tl">
+                <div class="flex-row space_between mx-30">
+                    <div class="flex-row center mt-10">
+                        <i data-lucide="grip"></i>
+                        <div class="ml-10 font-24 purple">DATA CANVAS</div>
+                    </div>
+                    <div>
+                        <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
+                    </div>
+                </div>
+                <div class="model-graph-wrap">
+                    <canvas id="model_graph_canvas"></canvas>
+                </div>
+                <div>
+                    <div class="font-20 ml-30">PRESET DATA SET</div>
+                </div>
+                <div class="flex-row ml-20 mr-20 space_around mt-10 preset-controls">
+                    <button class="button_purple button_preset active" data-preset="linear">Linear</button>
+                    <button class="button_purple button_preset" data-preset="curve">Curve</button>
+                    <button class="button_purple button_preset" data-preset="wave">Wave</button>
+                    <button class="button_purple button_preset" data-preset="random">Random</button>
+                    <div class="vertical_divider"></div>
+                    <button id="random_data_button" class="button_purple button_container"><i
+                            data-lucide="shuffle"></i>Random Data</button>
+                    <button id="clear_data_button" class="button_purple button_container"><i
+                            data-lucide="trash-2"></i>Clear Data</button>
+                </div>
+            </div>
+            <div class="canvas" id="canvas_bl">
+                <div class="flex-row">
+                    <i data-lucide="settings"></i>
+                    <p class="purple font-24 ml-10">HYPERPARAMETERS & CONTROL</p>
+                </div>
+                <div>
+                    <div class="control-grid m-20">
+                        <div class="setting_box w-430">
+                            <div class="mt-20 ml-20 mb-10 font-20">MODEL SETTING</div>
+                            <div class="flex-row center space_between mx-20">
+                                <div class="grey">Polynomial Degree</div>
+                                <div class="value_box" id="degree_value" contenteditable="true">2</div>
+                            </div>
+                            <div class="slider_row mt-20">
+                                <div>1</div>
+                                <input type="range" id="degree_slider" min="1" max="6" value="2" class="custom_slider">
+                                <div>6</div>
+                            </div>
+                            <div class="flex-row center space_between mx-20 mt-20">
+                                <div class="grey">Learning Rate</div>
+                                <div class="value_box" id="rate_value" contenteditable="true">0.01</div>
+                            </div>
+                            <div class="slider_row mt-20">
+                                <div>0.001</div>
+                                <input type="range" id="rate_slider" min="0.001" max="0.100" step="0.001" value="0.01"
+                                    class="custom_slider">
+                                <div>0.100</div>
+                            </div>
+                            <div class="flex-row center space_between mx-20 mt-20">
+                                <label class="grey" for="max_epoch">Max Epoch</label>
+                                <input type="number" id="max_epoch" class="number_box" min="1" step="1" value="100">
+                            </div>
+                        </div>
+                        <div class="setting_box w-395">
+                            <div class="font-20 mt-20 ml-20">EXECUTION CONTROLS</div>
+                            <div class="flex-row space_around mt-20 mx-10">
+                                <button id="reset_button" class="center gap-10 justify_center">
+                                    <i data-lucide="rotate-ccw"></i>
+                                    <div class="white">Reset</div>
+                                </button>
+                                <button id="step_button" class="center gap-10 justify_center">
+                                    <div class="white">Step</div>
+                                    <i data-lucide="move-right"></i>
+                                </button>
+                            </div>
+                            <div id="play_button" class="flex-row center mx-20 mt-10 gap-10 justify_center">
+                                <i data-lucide="play"></i>
+                                <div>Play until Convergence</div>
+                            </div>
+                            <div id="pause_button" class="flex-row center mx-20 mt-10 gap-10 justify_center">
+                                <i data-lucide="pause"></i>
+                                <div>Pause</div>
+                            </div>
+                            <div class="mt-10 ml-20">Speed</div>
+                            <div class="flex-row slider_row mt-10 ">
+                                <div>Slow</div>
+                                <input type="range" id="speed_slider" min="1" max="10" step="1" value="4"
+                                    class="custom_slider">
+                                <div>Fast</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </section>
-      <section class="panel bottom-panel" id="canvas_bl" aria-labelledby="controls_heading">
-        <div class="panel-content">
-          <div class="panel-heading"><div class="panel-title"><span class="section-number">02</span><h2 id="controls_heading">Hyperparameters & controls</h2></div></div>
-          <div class="control-grid">
-            <section class="setting-box" aria-label="Model settings"><h3>Model settings</h3>
-              <div class="field"><div class="field-heading"><label for="degree_slider">Polynomial degree</label><input id="degree_value" type="number" min="1" max="6" step="1" value="2" aria-label="Polynomial degree value"></div><input id="degree_slider" type="range" min="1" max="6" value="2" aria-label="Polynomial degree"><div class="range-labels"><span>1 · straight line</span><span>6 · more flexible</span></div></div>
-              <div class="field"><div class="field-heading"><label for="rate_slider">Learning rate (α)</label><input id="rate_value" type="number" min="0.001" max="0.1" step="0.001" value="0.1" aria-label="Learning rate value"></div><input id="rate_slider" type="range" min="0.001" max="0.1" step="0.001" value="0.1" aria-label="Learning rate"><div class="range-labels"><span>0.001 · smaller steps</span><span>0.1 · larger steps</span></div></div>
-              <div class="field"><div class="field-heading"><label for="max_epoch">Maximum epochs</label><input id="max_epoch" type="number" min="1" max="50000" step="1" value="5000"></div><p class="hint">An epoch is one update using every data point.</p></div>
-            </section>
-            <section class="setting-box" aria-label="Execution controls"><h3>Execution controls</h3>
-              <div class="button-row"><button id="reset_button">↺ Reset</button><button id="step_button" class="primary">Step →</button></div><button id="play_button" class="play">▶ Play until Convergence</button><button id="pause_button" disabled>Ⅱ Pause</button>
-              <div class="field"><label class="hint" for="speed_slider">Playback speed <span id="speed_value">· 5 epochs / tick</span></label><input id="speed_slider" type="range" min="1" max="3" step="1" value="2"><div class="range-labels"><span>Slow</span><span>Normal</span><span>Fast</span></div></div>
-              <p class="hint" style="margin-top:15px">Step performs exactly one epoch. Play repeats updates and refreshes the curve, coefficients, and loss together.</p>
-            </section>
-          </div>
-          <div class="learning-note"><strong>Try this: can a line fit a curve?</strong><p>Choose Quadratic, set degree to 1, and press Play. Then change the degree to 2 and train again. The extra squared term lets the model bend.</p></div>
-          <p class="hint" style="margin-top:14px">Editing data or degree restarts training. Reset keeps your data. Learning rate and maximum epochs can be changed to continue the current fit.</p>
+
+        <div class="scroll">
+            <div class="canvas" id="canvas_tr">
+                <div class="flex-row center space_between mx-30 model-heading">
+                    <div class="flex-row center gap-10">
+                        <i data-lucide="box"></i>
+                        <div>MODEL STATE (STEP-BY-STEP)</div>
+                    </div>
+                    <div id="step_counter">STEP 0 / 100</div>
+                </div>
+                <div class="flex-row mx-30 current-model-heading">
+                    <div class="font-20">Current Model</div>
+                    <span>&nbsp;</span>
+                    <div class="font-20 grey" id="model_degree">(Degree = 2)</div>
+                </div>
+                <div class="equation" id="model_equation" aria-label="Current polynomial equation"></div>
+                <div class="model-cards mx-30">
+                    <section class="model_card" aria-labelledby="coefficients_heading">
+                        <h2 id="coefficients_heading">COEFFICIENTS (β)</h2>
+                        <div id="coefficient_rows"></div>
+                    </section>
+                    <section class="model_card" aria-labelledby="changes_heading">
+                        <h2 id="changes_heading">WHAT CHANGED?</h2>
+                        <div id="coefficient_changes"></div>
+                    </section>
+                    <section class="model_card" aria-labelledby="training_heading">
+                        <h2 id="training_heading">TRAINING STATUS</h2>
+                        <dl class="training-stats">
+                            <dt>Epoch</dt>
+                            <dd><span id="training_epoch">0</span> /<span id="training_max_epoch">100</span></dd>
+                            <dt>Current MSE</dt>
+                            <dd id="current_mse">—</dd>
+                            <dt>Best MSE</dt>
+                            <dd id="best_mse">—</dd>
+                        </dl>
+                    </section>
+                </div>
+                <section class="how-it-works mx-30" aria-labelledby="how_heading">
+                    <h2 id="how_heading">HOW IT WORKS</h2>
+                    <ol id="training_explanation">
+                        <li class="active" id="predict_explanation">Predict — Calculate ŷ for each x</li>
+                        <li id="error_explanation">Measure Error — Compare ŷ with actual y</li>
+                        <li id="adjust_explanation">Adjust — Update the coefficients</li>
+                        <li id="improve_explanation">Improve — Check the change in MSE</li>
+                    </ol>
+                    <p id="training_message" role="status"></p>
+                </section>
+            </div>
+            <div class="canvas" id="canvas_br">
+                <div class="loss-heading flex-row center space_between mx-30">
+                    <div class="flex-row center gap-10 purple">
+                        <i data-lucide="chart-line"></i>
+                        <h2>LOSS GRAPH</h2>
+                    </div>
+                    <span id="loss_status">Ready</span>
+                </div>
+                <div class="loss-legend mx-30">
+                    <span><span class="loss-line-swatch"></span>MSE</span>
+                    <span><span class="loss-line-swatch best-loss-swatch"></span>Best MSE</span>
+                    <span class="grey">Lower is better</span>
+                </div>
+                <div class="loss-graph-wrap">
+                    <canvas id="loss_graph_canvas" role="img" aria-label="Mean squared error by epoch">
+                        Mean squared error history. The latest value appears below the graph.
+                    </canvas>
+                </div>
+                <p id="loss_readout" class="mx-30">No data</p>
+                <p class="loss-help mx-30">Hover over the line to inspect an epoch. The chart includes the initial model
+                    at epoch 0.</p>
+                <details class="convergence-rule mx-30">
+                    <summary>When does training converge?</summary>
+                    <p>Training stops when MSE ≤ 1e−10 or the MSE gradient norm ≤ 1e−5. A small gradient means the error
+                        changes very little when the coefficients change. Max Epoch is a separate limit.</p>
+                </details>
+            </div>
         </div>
-      </section>
     </div>
-    <div class="column" id="right_column" tabindex="0" role="region" aria-label="Model state and loss. Scroll independently.">
-      <section class="panel top-panel" id="canvas_tr" aria-labelledby="model_heading">
-        <div class="panel-content">
-          <div class="panel-heading"><div class="panel-title"><span class="section-number">03</span><h2 id="model_heading">Model state · step by step</h2></div><span class="badge" id="step_counter">EPOCH 0 / 5000</span></div>
-          <div class="equation-box"><div class="equation" id="model_equation" aria-label="Current polynomial equation"></div><p class="hint">We use <span class="formula">z = x / 5</span>, so −1 ≤ z ≤ 1. Scaling keeps powers stable; this is still a polynomial in x. β values are the learned coefficients.</p></div>
-          <dl class="stats"><div class="stat"><dt>Degree / coefficients</dt><dd id="model_degree">2 / 3</dd></div><div class="stat"><dt>Current MSE</dt><dd id="current_mse">—</dd></div><div class="stat"><dt>Best MSE</dt><dd id="best_mse">—</dd></div></dl>
-          <div class="table-wrap"><table><caption id="coefficient_caption">Coefficients start at zero. Take a step to see the update.</caption><thead><tr><th scope="col">Term</th><th scope="col">Before</th><th scope="col">Gradient g</th><th scope="col">Change Δβ</th><th scope="col">After β</th></tr></thead><tbody id="coefficient_rows"></tbody></table></div>
-          <ol class="math-steps">
-            <li><div><strong>Predict.</strong> <span class="formula">ŷᵢ = β₀ + β₁zᵢ + … + βd zᵢᵈ</span><br>Combine powers of the input to draw a curve.</div></li>
-            <li><div><strong>Measure error.</strong> <span class="formula">eᵢ = ŷᵢ − yᵢ; MSE = (1/n) Σ eᵢ²</span><br>Square each vertical error, then average over all n points.</div></li>
-            <li><div><strong>Adjust every coefficient.</strong> <span class="formula">gⱼ = (2/n) Σ eᵢ zᵢʲ; βⱼ ← βⱼ − αgⱼ</span><br>The gradient points uphill in error; subtract it to move downhill.</div></li>
-            <li><div><strong>Check improvement.</strong> <span id="improvement_text">Take a step to compare MSE before and after.</span></div></li>
-          </ol>
-          <div class="worked-example"><strong>Follow one point</strong><p id="sample_calculation"></p><p id="update_calculation"></p></div>
-          <p id="training_message" class="status-message" role="status" aria-live="polite"></p>
-        </div>
-      </section>
-      <section class="panel bottom-panel" id="canvas_br" aria-labelledby="loss_heading">
-        <div class="panel-content">
-          <div class="panel-heading"><div class="panel-title"><span class="section-number">04</span><h2 id="loss_heading">Loss graph</h2></div><span class="badge" id="loss_status">Ready</span></div>
-          <div class="legend"><span><i class="swatch"></i>Mean squared error</span><span><i class="swatch best-swatch"></i>Best MSE</span><span>Lower is better</span></div>
-          <div class="chart-wrap loss-chart"><canvas id="loss_graph_canvas" role="img" aria-label="Mean squared error over training epochs"></canvas></div>
-          <p id="loss_readout" class="loss-readout">Epoch 0 · MSE —</p><div class="loss-progress" aria-hidden="true"><span id="loss_improvement_bar" style="width:0%"></span></div><p id="loss_improvement" class="hint">0% less error than the initial model.</p><p class="hint" style="margin-top:8px">Hover or touch the line to inspect an epoch. The chart starts at epoch 0.</p>
-          <details class="convergence-rule"><summary>What counts as convergence?</summary><p class="hint">Play stops if MSE ≤ 10⁻¹⁰, the gradient norm ≤ 10⁻⁵, or the MSE change is at most 10⁻⁶ × max(1, previous MSE) for 20 consecutive epochs. The last rule is a practical plateau check, not a guarantee of an exact optimum. Reaching the maximum epoch limit is reported separately.</p><p class="hint">A higher degree can fit more complex curves, but a lower training loss does not guarantee better predictions on new data.</p></details>
-        </div>
-      </section>
-    </div>
-  </main>
-  <footer><div class="members"><span>67011213 Nuttapat Wuttiutadom</span><span>67011137 Kempetchompoo Wongyutthachak</span><span>67011274 Pongpichaed Thiansiriwongsakul</span><span>67011392 Yotsakrit Rueangkaeo</span></div><strong>CEi KMITL</strong></footer>
-  <script>
-    (() => {
-      'use strict';
-      const $ = id => document.getElementById(id);
-      const canvas=$('model_graph_canvas'), ctx=canvas.getContext('2d');
-      const lossCanvas=$('loss_graph_canvas'), lossCtx=lossCanvas.getContext('2d');
-      const degreeInput=$('degree_slider'), rateInput=$('rate_slider'), maxInput=$('max_epoch');
-      const state={ points:[], beta:[], before:[], gradient:[], epoch:0, mse:null, previousMse:null, best:null, history:[], running:false, timer:null, plateau:0, reason:'', selected:0, mode:'add', inspected:null, lastRate:null, error:false };
-      const clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
-      const degree=()=>Number(degreeInput.value), rate=()=>Number(rateInput.value);
-      const maxEpoch=()=>clamp(Math.round(Number(maxInput.value)||5000),1,50000);
-      const fmt=(value,digits=4)=>{
-        if(value===null || !Number.isFinite(value)) return '—';
-        if(value===0) return (0).toFixed(digits);
-        if(Math.abs(value)<Math.pow(10,-digits) || Math.abs(value)>=10000) return value.toExponential(2);
-        return value.toFixed(digits);
-      };
-      // Training, the displayed equation, and both plots use the same normalized basis.
-      function predict(x,beta=state.beta) { const z=x/5; return beta.reduceRight((sum,value)=>sum*z+value,0); }
-      function mse(beta=state.beta) {
-        if(!state.points.length) return null;
-        return state.points.reduce((sum,p)=>sum+(predict(p.x,beta)-p.y)**2,0)/state.points.length;
-      }
-      function gradients() {
-        const result=Array(state.beta.length).fill(0);
-        for(const point of state.points) {
-          const error=predict(point.x)-point.y;
-          let power=1;
-          for(let j=0;j<result.length;j++) { result[j]+=2*error*power/state.points.length; power*=point.x/5; }
-        }
-        return result;
-      }
-      function pause() { state.running=false; clearTimeout(state.timer); state.timer=null; }
-      function checkConvergence() {
-        if(!state.points.length) return;
-        if(state.mse<=1e-10) state.reason='near-zero loss';
-        else if(Math.hypot(...gradients())<=1e-5) state.reason='small gradient';
-        else if(state.plateau>=20) state.reason='loss plateau';
-        if(state.reason) pause();
-      }
-      function reset() {
-        pause(); state.beta=Array(degree()+1).fill(0); state.before=[...state.beta]; state.gradient=Array(state.beta.length).fill(0);
-        state.epoch=0; state.mse=mse(); state.previousMse=state.mse; state.best=state.mse;
-        state.history=state.mse===null?[]:[state.mse]; state.plateau=0; state.reason='';
-        state.inspected=null; state.lastRate=null; state.error=false; checkConvergence(); render();
-      }
-      function step() {
-        if(!state.points.length || state.reason || state.error || state.epoch>=maxEpoch()) return false;
-        const gradient=gradients(), alpha=rate(), next=state.beta.map((value,j)=>value-alpha*gradient[j]), nextMse=mse(next);
-        if(!next.every(Number.isFinite) || !Number.isFinite(nextMse)) { state.error=true; pause(); return false; }
-        state.before=[...state.beta]; state.previousMse=state.mse; state.gradient=gradient;
-        state.beta=next; state.mse=nextMse; state.lastRate=alpha; state.best=Math.min(state.best,nextMse); state.epoch++;
-        state.history.push(nextMse); state.inspected=null;
-        const improvement=state.previousMse-nextMse;
-        state.plateau=improvement>=0 && improvement<=1e-6*Math.max(1,state.previousMse)?state.plateau+1:0;
-        checkConvergence(); if(state.epoch>=maxEpoch()) pause(); return true;
-      }
-      function playTick() {
-        if(!state.running) return;
-        const speed=Number($('speed_slider').value), batch=[1,5,25][speed-1];
-        for(let i=0;i<batch && state.running;i++) { if(!step()) { pause(); break; } }
-        render(); if(state.running) state.timer=setTimeout(playTick,[350,70,30][speed-1]);
-      }
-      function syncPointSelect() {
-        state.selected=clamp(state.selected,0,Math.max(0,state.points.length-1));
-        $('point_select').innerHTML=state.points.map((p,i)=>`<option value="${i}">Point ${i+1}: x = ${fmt(p.x,2)}, y = ${fmt(p.y,2)}</option>`).join('');
-        $('point_select').value=String(state.selected); $('point_select').disabled=!state.points.length; $('delete_selected').disabled=!state.points.length;
-        const point=state.points[state.selected];
-        $('selected_point_text').textContent=point?`Selected point ${state.selected+1}: x = ${fmt(point.x,2)}, y = ${fmt(point.y,2)}.`:'No points. Add a point or generate a dataset.';
-      }
-      function dataChanged(preset='') {
-        document.querySelectorAll('[data-preset]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.preset===preset)));
-        syncPointSelect(); reset();
-      }
-      function generate(type) {
-        state.points=Array.from({length:26},(_,i)=>{
-          const x=type==='random'?Math.random()*10-5:-5+i*10/25, z=x/5, noise=(Math.random()-.5)*.5;
-          const y=type==='linear'?.6*x+.3+noise:type==='curve'?3*z*z+.6*z-1.1+noise:type==='wave'?1.6*Math.sin(x*.95)+noise:Math.random()*6-3;
-          return {x,y};
-        });
-        state.selected=0; dataChanged(type);
-      }
-      function renderModel() {
-        $('point_count').textContent=`${state.points.length} point${state.points.length===1?'':'s'}`;
-        $('model_degree').textContent=`${degree()} / ${state.beta.length}`; $('step_counter').textContent=`EPOCH ${state.epoch} / ${maxEpoch()}`;
-        $('model_equation').innerHTML='ŷ = '+state.beta.map((value,j)=>{
-          const sign=j===0?(value<0?'−':''):(value<0?' − ':' + '), power=j===0?'':j===1?'z':`z<sup>${j}</sup>`;
-          return `<span class="equation-term">${sign}${fmt(Math.abs(value),3)}${power}</span>`;
-        }).join(' ');
-        $('current_mse').textContent=fmt(state.mse); $('best_mse').textContent=fmt(state.best);
-        $('coefficient_caption').textContent=state.epoch?`Epoch ${state.epoch}: β after = β before − ${fmt(state.lastRate,3)} × gradient (all points).`:'Coefficients start at zero. Take a step to see the update.';
-        $('coefficient_rows').innerHTML=state.beta.map((value,j)=>{
-          const delta=value-state.before[j];
-          return `<tr><td>β<sub>${j}</sub> ${j===0?'(bias)':j===1?'· z':`· z<sup>${j}</sup>`}</td><td>${fmt(state.before[j])}</td><td>${state.epoch?fmt(state.gradient[j]):'—'}</td><td class="${delta>0?'delta-positive':delta<0?'delta-negative':''}">${state.epoch?(delta>0?'+':'')+fmt(delta):'—'}</td><td class="current">${fmt(value)}</td></tr>`;
-        }).join('');
-        $('improvement_text').textContent=state.epoch?`MSE ${fmt(state.previousMse,6)} → ${fmt(state.mse,6)} (${fmt(state.previousMse-state.mse,6)} less error this epoch).`:'Take a step to compare MSE before and after.';
-        const point=state.points[state.selected];
-        if(point) {
-          const before=predict(point.x,state.before), after=predict(point.x);
-          $('sample_calculation').textContent=`Point ${state.selected+1}: x = ${fmt(point.x,2)}, y = ${fmt(point.y,2)}, z = ${fmt(point.x/5,3)}. ${state.epoch?'Before this update':'Initial prediction'}: ŷ = ${fmt(before)}, error = ${fmt(before-point.y)}, error² = ${fmt((before-point.y)**2)}. Current ŷ = ${fmt(after)}.`;
-          $('update_calculation').textContent=state.epoch?`Bias update: β₀ = ${fmt(state.before[0])} − ${fmt(state.lastRate,3)} × (${fmt(state.gradient[0])}) = ${fmt(state.beta[0])}. The gradient averages all ${state.points.length} points.`:'Inspect a point on the canvas to follow its prediction. The dashed line is its vertical error.';
-        } else { $('sample_calculation').textContent='Add data to see a prediction and its squared error.'; $('update_calculation').textContent='The loss is the average squared error over all points.'; }
-        const limit=state.epoch>=maxEpoch();
-        const status=state.error?'Stopped':!state.points.length?'No data':state.reason?'Converged':limit?'Max epochs':state.running?'Training':state.epoch?'Paused':'Ready';
-        $('loss_status').textContent=status; $('loss_status').dataset.state=state.reason?'converged':limit?'limit':status.toLowerCase();
-        const message=state.error?'Training stopped because a value was not finite. Reset the model to restart.':!state.points.length?'No data — add points or generate a dataset to start.':state.reason?`Converged at epoch ${state.epoch}: ${state.reason}. Reset or change the data or degree to explore another fit.`:limit?`Maximum of ${maxEpoch()} epochs reached. Increase the limit to continue; this is not convergence.`:state.running?'Training — the curve, coefficient table, and loss update together.':state.epoch?'Paused. Step adds one epoch; Play continues from these coefficients.':'Ready. Press Step to perform one complete gradient descent update.';
-        if($('training_message').textContent!==message) $('training_message').textContent=message;
-        const blocked=!state.points.length || !!state.reason || limit || state.error;
-        $('step_button').disabled=blocked || state.running; $('play_button').disabled=blocked || state.running; $('pause_button').disabled=!state.running;
-        const initial=state.history[0], percent=initial>0?100*(1-state.mse/initial):0;
-        $('loss_improvement_bar').style.width=`${clamp(percent,0,100)}%`;
-        $('loss_improvement').textContent=state.points.length?`${fmt(percent,1)}% less error than the initial model · ${state.epoch} completed epochs.`:'Add data to start tracking improvement.';
-      }
-      function dimensions(target) { return {width:target.clientWidth,height:target.clientHeight}; }
-      function plotBounds(target,isLoss=false) { const {width,height}=dimensions(target); return {width,height,left:isLoss?68:42,right:width-19,top:24,bottom:height-35}; }
-      function dataPixel(point,b) { return {x:b.left+(point.x+5)/10*(b.right-b.left),y:b.bottom-(point.y+4)/8*(b.bottom-b.top)}; }
-      function background(context,b) { context.clearRect(0,0,b.width,b.height); context.fillStyle='#0d121d'; context.fillRect(0,0,b.width,b.height); context.font='10px system-ui,sans-serif'; context.lineWidth=1; context.setLineDash([]); }
-      function line(context,x1,y1,x2,y2,color) { context.strokeStyle=color; context.beginPath(); context.moveTo(x1,y1); context.lineTo(x2,y2); context.stroke(); }
-      function drawData() {
-        const b=plotBounds(canvas); if(b.width<1 || b.height<1) return;
-        background(ctx,b); ctx.textBaseline='middle';
-        for(let x=-5;x<=5;x++) { const px=dataPixel({x,y:0},b).x; line(ctx,px,b.top,px,b.bottom,x===0?'#47516a':'#242d3e'); ctx.fillStyle='#94a0b5'; ctx.textAlign='center'; ctx.fillText(x,px,b.bottom+17); }
-        for(let y=-4;y<=4;y+=2) { const py=dataPixel({x:0,y},b).y; line(ctx,b.left,py,b.right,py,y===0?'#47516a':'#242d3e'); ctx.fillStyle='#94a0b5'; ctx.textAlign='right'; ctx.fillText(y,b.left-10,py); }
-        ctx.fillStyle='#aab5c9'; ctx.textAlign='left'; ctx.fillText('y',12,14); ctx.textAlign='right'; ctx.fillText('x',b.right+10,b.bottom+17);
-        ctx.save(); ctx.beginPath(); ctx.rect(b.left,b.top,b.right-b.left,b.bottom-b.top); ctx.clip();
-        if($('show_residuals').checked) { ctx.setLineDash([3,4]); state.points.forEach(p=>{ const actual=dataPixel(p,b), predicted=dataPixel({x:p.x,y:predict(p.x)},b); line(ctx,actual.x,actual.y,predicted.x,predicted.y,'#63708799'); }); ctx.setLineDash([]); }
-        if(state.points.length) { ctx.strokeStyle='#79e4c1'; ctx.lineWidth=2.5; ctx.beginPath(); for(let i=0;i<=300;i++) { const x=-5+i/30, p=dataPixel({x,y:predict(x)},b); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); } ctx.stroke(); }
-        ctx.restore();
-        state.points.forEach((point,i)=>{ const p=dataPixel(point,b); if(i===state.selected) { ctx.strokeStyle='#efc37d'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(p.x,p.y,9,0,2*Math.PI); ctx.stroke(); } ctx.fillStyle='#ceb0ff'; ctx.strokeStyle='#e5d6ff'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
-        if(!state.points.length) { ctx.fillStyle='#b6c1d3'; ctx.textAlign='center'; ctx.fillText('Click to add a point, or generate a dataset.',(b.left+b.right)/2,(b.top+b.bottom)/2); }
-        canvas.setAttribute('aria-label',`${state.points.length} data points. Polynomial degree ${degree()}, epoch ${state.epoch}, MSE ${fmt(state.mse,6)}. Use coordinate controls below for keyboard editing.`);
-      }
-      function drawLoss() {
-        const b=plotBounds(lossCanvas,true); if(b.width<1 || b.height<1) return;
-        background(lossCtx,b);
-        const peak=state.history.reduce((maximum,value)=>Math.max(maximum,value),1e-8), last=Math.max(1,state.epoch);
-        const px=i=>b.left+i/last*(b.right-b.left), py=value=>b.bottom-value/peak*(b.bottom-b.top);
-        lossCtx.textBaseline='middle';
-        for(let i=0;i<=4;i++) { const y=b.bottom-i/4*(b.bottom-b.top); line(lossCtx,b.left,y,b.right,y,'#242d3e'); lossCtx.fillStyle='#94a0b5'; lossCtx.textAlign='right'; lossCtx.fillText(fmt(peak*i/4,3),b.left-9,y); }
-        const ticks=Math.min(4,last);
-        for(let i=0;i<=ticks;i++) { const tick=Math.round(i*last/ticks); lossCtx.fillStyle='#94a0b5'; lossCtx.textAlign='center'; lossCtx.fillText(tick,px(tick),b.bottom+17); }
-        lossCtx.fillStyle='#aab5c9'; lossCtx.textAlign='left'; lossCtx.fillText('MSE',b.left,11); lossCtx.textAlign='right'; lossCtx.fillText('Epoch',b.right,b.height-5);
-        if(!state.history.length) { lossCtx.textAlign='center'; lossCtx.fillText('Add data to track the loss.',(b.left+b.right)/2,(b.top+b.bottom)/2); $('loss_readout').textContent='No data · MSE is not defined.'; lossCanvas.setAttribute('aria-label','Loss graph: no data.'); return; }
-        lossCtx.setLineDash([5,4]); line(lossCtx,b.left,py(state.best),b.right,py(state.best),'#efc37d'); lossCtx.setLineDash([]);
-        lossCtx.strokeStyle='#79e4c1'; lossCtx.lineWidth=2; lossCtx.beginPath(); state.history.forEach((value,i)=>i?lossCtx.lineTo(px(i),py(value)):lossCtx.moveTo(px(i),py(value))); lossCtx.stroke();
-        const index=state.inspected===null?state.epoch:clamp(state.inspected,0,state.epoch);
-        if(state.inspected!==null) { lossCtx.lineWidth=1; lossCtx.setLineDash([3,4]); line(lossCtx,px(index),b.top,px(index),b.bottom,'#66738b'); lossCtx.setLineDash([]); }
-        lossCtx.fillStyle='#79e4c1'; lossCtx.beginPath(); lossCtx.arc(px(index),py(state.history[index]),4,0,Math.PI*2); lossCtx.fill();
-        $('loss_readout').textContent=`Epoch ${index} · MSE ${fmt(state.history[index],6)} · Best ${fmt(state.best,6)}`;
-        lossCanvas.setAttribute('aria-label',`MSE from epoch 0 to ${state.epoch}. Initial ${fmt(state.history[0],6)}, current ${fmt(state.mse,6)}, best ${fmt(state.best,6)}.`);
-      }
-      function render() { renderModel(); drawData(); drawLoss(); }
-      function resizeCanvas(target,context) { const {width,height}=dimensions(target), ratio=window.devicePixelRatio||1; target.width=Math.round(width*ratio); target.height=Math.round(height*ratio); context.setTransform(ratio,0,0,ratio,0,0); }
-      // Match each row by content height, preserving independent column scroll positions.
-      function alignPanels() {
-        if(window.innerWidth<=760) return;
-        for(const [ids,property,minimum] of [[['canvas_tl','canvas_tr'],'--top-height',650],[['canvas_bl','canvas_br'],'--bottom-height',530]]) {
-          const height=Math.ceil(Math.max(minimum,...ids.map(id=>$(id).firstElementChild.getBoundingClientRect().height+2)));
-          if(document.documentElement.style.getPropertyValue(property)!==`${height}px`) document.documentElement.style.setProperty(property,`${height}px`);
-        }
-      }
-      let resizeFrame=0;
-      function scheduleResize() { cancelAnimationFrame(resizeFrame); resizeFrame=requestAnimationFrame(()=>{ alignPanels(); resizeCanvas(canvas,ctx); resizeCanvas(lossCanvas,lossCtx); drawData(); drawLoss(); }); }
-      function nearestPoint(event) {
-        const rect=canvas.getBoundingClientRect(), b=plotBounds(canvas); let index=-1,distance=15;
-        state.points.forEach((point,i)=>{ const p=dataPixel(point,b),d=Math.hypot(p.x-(event.clientX-rect.left),p.y-(event.clientY-rect.top)); if(d<distance) {index=i;distance=d;} }); return index;
-      }
-      function deletePoint(index) { if(index<0 || index>=state.points.length) return; state.points.splice(index,1); dataChanged(); }
-      canvas.addEventListener('click',event=>{
-        const nearest=nearestPoint(event);
-        if(state.mode==='remove') { deletePoint(nearest); return; }
-        if(state.mode==='inspect') { if(nearest>=0) { state.selected=nearest; syncPointSelect(); render(); } return; }
-        const rect=canvas.getBoundingClientRect(), b=plotBounds(canvas), x=event.clientX-rect.left,y=event.clientY-rect.top;
-        if(x<b.left || x>b.right || y<b.top || y>b.bottom) return;
-        state.points.push({x:-5+(x-b.left)/(b.right-b.left)*10,y:-4+(b.bottom-y)/(b.bottom-b.top)*8}); state.selected=state.points.length-1; dataChanged();
-      });
-      canvas.addEventListener('contextmenu',event=>{event.preventDefault();deletePoint(nearestPoint(event));});
-      document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{ state.mode=button.dataset.mode; document.querySelectorAll('[data-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button))); $('canvas_instruction').textContent=state.mode==='add'?'Click to add. Right-click a point to remove.':state.mode==='remove'?'Click or tap a point to delete it.':'Click a point to follow its calculation.'; canvas.style.cursor=state.mode==='add'?'crosshair':'pointer'; }));
-      document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>generate(button.dataset.preset)));
-      $('clear_data_button').addEventListener('click',()=>{state.points=[];dataChanged();});
-      $('point_form').addEventListener('submit',event=>{ event.preventDefault(); if(!$('point_form').reportValidity()) return; const x=Number($('point_x').value),y=Number($('point_y').value); if(!Number.isFinite(x)||!Number.isFinite(y)||x < -5||x>5||y < -4||y>4) return; state.points.push({x,y});state.selected=state.points.length-1;dataChanged(); });
-      $('delete_selected').addEventListener('click',()=>deletePoint(state.selected));
-      $('point_select').addEventListener('change',()=>{state.selected=Number($('point_select').value);syncPointSelect();render();});
-      $('show_residuals').addEventListener('change',drawData);
-      function bindNumber(slider,box,onChange) {
-        slider.addEventListener('input',()=>{box.value=slider.value;onChange();});
-        box.addEventListener('change',()=>{ const raw=box.valueAsNumber, valid=Number.isFinite(raw)?clamp(raw,Number(slider.min),Number(slider.max)):Number(slider.value); slider.value=String(valid);box.value=slider.value;onChange(); });
-      }
-      bindNumber(degreeInput,$('degree_value'),reset);
-      bindNumber(rateInput,$('rate_value'),()=>{
-        state.plateau=0;
-        if(state.reason==='loss plateau') {state.reason='';checkConvergence();}
-        renderModel();
-      });
-      maxInput.addEventListener('change',()=>{ const raw=maxInput.valueAsNumber;maxInput.value=String(Number.isFinite(raw)?clamp(Math.round(raw),1,50000):5000);if(state.epoch>=maxEpoch()) pause();renderModel(); });
-      $('speed_slider').addEventListener('input',()=>{$('speed_value').textContent=`· ${[1,5,25][Number($('speed_slider').value)-1]} epoch${$('speed_slider').value==='1'?'':'s'} / tick`;});
-      $('step_button').addEventListener('click',()=>{pause();step();render();});
-      $('reset_button').addEventListener('click',reset);
-      $('play_button').addEventListener('click',()=>{if(state.running || !state.points.length || state.reason || state.error || state.epoch>=maxEpoch()) return;state.running=true;playTick();});
-      $('pause_button').addEventListener('click',()=>{pause();renderModel();});
-      function inspectLoss(event) { if(!state.history.length) return;const rect=lossCanvas.getBoundingClientRect(),b=plotBounds(lossCanvas,true);state.inspected=clamp(Math.round((event.clientX-rect.left-b.left)/(b.right-b.left)*Math.max(1,state.epoch)),0,state.epoch);drawLoss(); }
-      lossCanvas.addEventListener('pointermove',inspectLoss);lossCanvas.addEventListener('pointerdown',inspectLoss);lossCanvas.addEventListener('pointerleave',()=>{state.inspected=null;drawLoss();});
-      window.addEventListener('resize',scheduleResize);
-      if(typeof ResizeObserver!=='undefined') {const observer=new ResizeObserver(scheduleResize);document.querySelectorAll('.panel-content,.chart-wrap').forEach(element=>observer.observe(element));}
-      generate('curve');scheduleResize();
-    })();
-  </script>
+
 </body>
+<footer>
+    <div class="flex-row space_between center">
+        <p class="font-14">67011213 Nuttapat Wuttiutadom, 67011137 Kempetchompoo Wongyutthachak</p>
+        <p class="">CEi KMITL</p>
+    </div>
+
+</footer>
+
 </html>
+
+<!-- <i data-lucide="grip"></i> -->
+
+<style>
+    body {
+        background-color: #080B10;
+        overflow: hidden;
+        color: #FFFFFF;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 16px;
+
+    }
+
+    .font-14 {
+        font-size: 12px;
+    }
+
+    .font-20 {
+        font-size: 20px;
+    }
+
+    .font-24 {
+        font-size: 24px;
+    }
+
+    .font-36 {
+        font-size: 36px;
+    }
+
+    .purple {
+        color: #E3C9FF;
+    }
+
+    .grey {
+        color: #BCB9B9;
+    }
+
+    .white {
+        color: #ffffff;
+    }
+
+    .ml-10 {
+        margin-left: 10px;
+    }
+
+    .ml-20 {
+        margin-left: 20px;
+    }
+
+    .ml-30 {
+        margin-left: 30px;
+    }
+
+    .mt-10 {
+        margin-top: 10px;
+    }
+
+    .mt-20 {
+        margin-top: 20px;
+    }
+
+    .mt-30 {
+        margin-top: 30px;
+    }
+
+    .mt-40 {
+        margin-top: 40px;
+    }
+
+    .mt-0 {
+        margin-top: 0px;
+    }
+
+    .mr-20 {
+        margin-right: 20px;
+    }
+
+    .mb-10 {
+        margin-bottom: 10px;
+    }
+
+    .mb-30 {
+        margin-bottom: 30px;
+    }
+
+    .mb-20 {
+        margin-bottom: 20px;
+    }
+
+    .gap-10 {
+        gap: 10px;
+    }
+
+    .gap-20 {
+        gap: 20px;
+    }
+
+    .gap-30 {
+        gap: 30px;
+    }
+
+    .w-395 {
+        width: 395px;
+    }
+
+    .w-430 {
+        width: 430px;
+    }
+
+    .m-10 {
+        margin: 10px;
+    }
+
+    .m-20 {
+        margin: 20px;
+    }
+
+    .m-30 {
+        margin: 30px;
+    }
+
+    .mx-30 {
+        margin-left: 30px;
+        margin-right: 30px;
+    }
+
+    .mx-20 {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .my-20 {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .my-30 {
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+
+    .my-50 {
+        margin-top: 50px;
+        margin-bottom: 50px;
+    }
+
+    .space_around {
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .space_between {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .justify_center {
+        display: flex;
+        justify-content: center;
+    }
+
+    .center {
+        display: flex;
+        align-items: center;
+    }
+
+    .button_purple {
+        background-color: #080B10;
+        color: #ffffff;
+        border: 1px solid #D0A4FF;
+        border-radius: 9px;
+        padding: 12px 18px;
+        cursor: pointer;
+    }
+
+    .button_purple:hover,
+    .button_purple.active {
+        background-color: #9B65D5;
+        border: 1px solid #D0A4FF;
+    }
+
+    .flex-row {
+        display: flex;
+        flex-direction: row;
+
+    }
+
+    #topic_name {
+        margin-left: 20px;
+        margin-bottom: 20px;
+    }
+
+    #outside {
+        gap: 20px;
+        margin-left: 20px;
+    }
+
+    .scroll {
+        width: 50%;
+        height: calc(100vh - 160px);
+        overflow-y: scroll;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        padding-right: 10px;
+
+    }
+
+    .lucide-grip {
+        color: #E3C9FF;
+
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-shuffle {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-trash-2 {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-settings {
+        color: #E3C9FF;
+        margin-left: 30px;
+        margin-top: 30px;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-rotate-ccw {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-move-right {
+        color: #ffffff;
+        width: 15px;
+        height: 16px;
+    }
+
+    .lucide-play {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .lucide-pause {
+        color: #ffffff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .canvas {
+        width: 100%;
+        border: 1px solid #ffffff;
+        border-radius: 30px;
+        margin-top: 10px;
+    }
+
+    #canvas_tl {
+        min-height: 735px;
+        height: auto;
+
+    }
+
+    #canvas_bl {
+        min-height: 490px;
+        height: auto;
+    }
+
+    #canvas_tr {
+        height: auto;
+        min-height: 735px;
+        overflow: visible;
+        padding: 12px 0 20px;
+        box-sizing: border-box;
+        container-type: inline-size;
+        container-name: model-state;
+    }
+
+    .model-heading {
+        min-height: 52px;
+        gap: 16px;
+        flex-wrap: wrap;
+        color: #E3C9FF;
+        font-size: clamp(18px, 2.8cqi, 26px);
+    }
+
+    #step_counter {
+        color: #BCB9B9;
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .model-graph-wrap {
+        height: 500px;
+        margin: 20px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #293246;
+        border-radius: 18px;
+        background: #08111f;
+    }
+
+    #model_graph_canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    #canvas_br {
+        min-height: 460px;
+        height: auto;
+        padding-bottom: 24px;
+        box-sizing: border-box;
+    }
+
+    .loss-heading {
+        min-height: 68px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .loss-heading h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 500;
+    }
+
+    #loss_status {
+        color: #bcb9b9;
+        font-size: 13px;
+    }
+
+    #loss_status[data-state="converged"] {
+        color: #80ffdb;
+    }
+
+    #loss_status[data-state="stopped"] {
+        color: #ff7070;
+    }
+
+    .loss-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        font-size: 13px;
+    }
+
+    .loss-legend>span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .loss-line-swatch {
+        width: 22px;
+        border-top: 2px solid #80ffdb;
+    }
+
+    .best-loss-swatch {
+        border-color: #c9e63c;
+        border-top-style: dashed;
+    }
+
+    .loss-graph-wrap {
+        height: 270px;
+        margin: 18px 20px 12px;
+    }
+
+    #loss_graph_canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    #loss_readout {
+        color: #80ffdb;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .loss-help,
+    .convergence-rule {
+        color: #bcb9b9;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .convergence-rule {
+        margin-top: 12px;
+    }
+
+    .convergence-rule summary {
+        cursor: pointer;
+        color: #e3c9ff;
+    }
+
+    .convergence-rule p {
+        margin-bottom: 0;
+    }
+
+    #step_button:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 600px) {
+
+        .loss-heading,
+        .loss-legend,
+        #loss_readout,
+        .loss-help,
+        .convergence-rule {
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+        .loss-graph-wrap {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+    }
+
+    .canvas_instruction {
+        margin-top: 30px;
+        /* flex-grow: 1; */
+        /* text-align: center; */
+    }
+
+    .vertical_divider {
+        width: 1px;
+        background-color: #ffffff;
+        /* margin-left: 20px;
+        margin-right: 20px; */
+    }
+
+    .preset-controls {
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 10px;
+        padding-bottom: 20px;
+    }
+
+    .preset-controls .button_preset {
+        flex: 1 1 82px;
+        min-width: 72px;
+    }
+
+    .preset-controls .button_container {
+        flex: 1 1 145px;
+        min-width: 125px;
+    }
+
+    .preset-controls .vertical_divider {
+        flex: 0 0 1px;
+        min-height: 42px;
+    }
+
+    .button_container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .setting_box {
+        height: 310px;
+        border: 1px solid #D0A4FF;
+        border-radius: 20px;
+    }
+
+    .control-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .control-grid .setting_box {
+        width: auto;
+        min-width: 0;
+        height: auto;
+        min-height: 310px;
+        padding-bottom: 20px;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 1450px) {
+        .control-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .control-grid .setting_box {
+            min-height: 0;
+        }
+    }
+
+    @media (max-width: 900px) {
+        body {
+            overflow: auto;
+        }
+
+        #outside {
+            flex-direction: column;
+            margin-right: 20px;
+        }
+
+        .scroll {
+            width: 100%;
+            height: auto;
+            overflow: visible;
+            padding-right: 0;
+        }
+    }
+
+    .value_box {
+        border: 1px solid #ffffff;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 5px 20px;
+    }
+
+    .number_box {
+        width: 68px;
+        box-sizing: border-box;
+        border: 1px solid #ffffff;
+        border-radius: 10px;
+        padding: 5px 7px;
+        background-color: transparent;
+        color: #ffffff;
+        font: inherit;
+    }
+
+    .slider_row {
+        display: grid;
+        grid-template-columns: 52px 1fr 52px;
+        align-items: center;
+        gap: 12px;
+        margin-left: 20px;
+        margin-right: 20px;
+        text-align: center;
+    }
+
+    .custom_slider {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 100%;
+        height: 3px;
+        margin: 0;
+        border-radius: 3px;
+        background: linear-gradient(to right,
+                #92FFD9 0%,
+                #92FFD9 var(--fill, 0%),
+                #4b4d52 var(--fill, 0%),
+                #4b4d52 100%);
+    }
+
+    .custom_slider::-webkit-slider-thumb {
+        appearance: none;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #92FFD9;
+        cursor: pointer;
+    }
+
+    .custom_slider::-moz-range-thumb {
+        width: 10px;
+        height: 10px;
+        border: none;
+        border-radius: 50%;
+        background: #92FFD9;
+        cursor: pointer;
+    }
+
+    #reset_button {
+        padding: 13px 35px;
+        background-color: #080B10;
+        border: 1px solid #fffffF;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    #step_button {
+        padding: 13px 35px;
+        background-color: #9B65D5;
+        border: 1px solid #D0A4FF;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    #play_button {
+        padding: 13px 40px;
+        background-color: #39C493;
+        border: 1px solid #ffffff;
+        border-radius: 9px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    #pause_button {
+        padding: 13px 40px;
+        background-color: #080B10;
+        border: 1px solid #ffffff;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+    .equation {
+        margin-top: 32px;
+        margin-left: 30px;
+        margin-right: 30px;
+        border: 1px solid #888;
+        border-radius: 15px;
+        padding: 10px;
+        min-height: 64px;
+        box-sizing: border-box;
+        background: #000;
+        display: flex;
+        align-items: center;
+        font-size: clamp(22px, 4.3cqi, 36px);
+        justify-content: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .equation-expression {
+        min-width: 0;
+        max-width: 100%;
+        text-align: center;
+        line-height: 1.4;
+    }
+
+    .equation-term {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .equation-term sup {
+        font-size: 0.65em;
+        line-height: 0;
+        vertical-align: baseline;
+        position: relative;
+        top: -0.55em;
+    }
+
+    .equation-coefficient {
+        color: #80ffdb;
+    }
+
+    .current-model-heading {
+        flex-wrap: wrap;
+        margin-top: 24px;
+    }
+
+    .model-cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-auto-rows: 1fr;
+        gap: clamp(12px, 3cqi, 28px);
+        margin-top: 40px;
+    }
+
+    .model_card {
+        min-width: 0;
+        min-height: 220px;
+        padding: 16px 10px;
+        box-sizing: border-box;
+        background: #000;
+        border: 1px solid #888;
+        border-radius: 16px;
+        font-size: clamp(13px, 1.9cqi, 18px);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .model_card h2,
+    .how-it-works h2 {
+        font-size: inherit;
+        font-weight: 500;
+        margin: 6px 0 16px;
+    }
+
+    .model_card h2 {
+        text-align: center;
+    }
+
+    .coefficient-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) minmax(0, 1.4fr);
+        align-items: baseline;
+        gap: 6px;
+        padding: 12px 4px;
+    }
+
+    .coefficient-row+.coefficient-row {
+        border-top: 1px solid #777;
+    }
+
+    .coefficient-value,
+    .coefficient-delta {
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .delta-up {
+        color: #92ed00;
+    }
+
+    .delta-down {
+        color: #ff3030;
+    }
+
+    .delta-zero {
+        color: #bcb9b9;
+    }
+
+    .coefficient-change {
+        padding: 12px 0;
+        text-align: center;
+    }
+
+    .training-stats {
+        margin: 0 clamp(4px, 2cqi, 22px);
+        font-size: 14px;
+        line-height: 1.35;
+    }
+
+    .training-stats dt {
+        margin-top: 6px;
+    }
+
+    .training-stats dt:first-child {
+        margin-top: 0;
+    }
+
+    .training-stats dd {
+        margin: 4px 0 0;
+        overflow-wrap: anywhere;
+    }
+
+    #training_epoch {
+        color: #d0a4ff;
+        font-size: 18px;
+    }
+
+    #current_mse {
+        color: #80ffdb;
+        font-size: 18px;
+    }
+
+    #best_mse {
+        color: #c9e63c;
+        font-size: 18px;
+    }
+
+    .how-it-works {
+        margin-top: 40px;
+        padding: 16px 24px;
+        min-height: 168px;
+        font-size: 14px;
+        box-sizing: border-box;
+        border: 1px solid #888;
+        border-radius: 16px;
+        background: #000;
+    }
+
+    .how-it-works h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+    }
+
+    .how-it-works ol {
+        margin: 0;
+        padding-left: 2ch;
+    }
+
+    .how-it-works li {
+        color: #8c8c8c;
+        line-height: 1.65;
+        padding-left: 0.2ch;
+    }
+
+    .how-it-works li.active {
+        color: #e3c9ff;
+    }
+
+    .how-it-works li::marker {
+        content: counter(list-item) " ";
+    }
+
+    #training_message {
+        color: #bcb9b9;
+        font-size: 12px;
+        margin: 10px 0 0;
+    }
+
+    @media (min-width: 901px) {
+        #canvas_tr {
+            min-height: var(--data-panel-height, 737px);
+        }
+    }
+
+    @container model-state (max-width: 540px) {
+        .model-cards {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .model_card {
+            min-height: 0;
+            font-size: 16px;
+        }
+
+        .model_card h2 {
+            margin-bottom: 14px;
+        }
+
+        .model-heading {
+            font-size: 18px;
+        }
+
+        .how-it-works {
+            padding: 20px;
+        }
+    }
+
+    @container model-state (max-width: 360px) {
+
+        .mx-30,
+        .equation {
+            margin-left: 16px;
+            margin-right: 16px;
+        }
+
+        .model_card {
+            font-size: 14px;
+        }
+    }
+</style>
+
+<!-- <script>
+import { createIcons, Grip } from 'lucide';
+
+createIcons({
+  icons: {
+    Grip
+  }
+});
+</script> -->
+
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if (window.lucide) lucide.createIcons();</script>
+
+<script>
+    function updateSliderColor(slider) {
+        const min = Number(slider.min);
+        const max = Number(slider.max);
+        const fill = ((Number(slider.value) - min) / (max - min)) * 100;
+        slider.style.setProperty('--fill', fill + '%');
+    }
+</script>
+
+<script>
+    // 1. Select all the buttons with the class 'button_purple'
+    const buttons = document.querySelectorAll('.button_preset');
+
+    // 2. Add a click event to every button
+    buttons.forEach(button => {
+        button.addEventListener('click', function () {
+
+            // 3. Remove the 'active' class from ALL buttons first
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // 4. Add the 'active' class ONLY to the button that was just clicked
+            this.classList.add('active');
+
+        });
+    });
+</script>
+
+<script>
+    const degreeSlider = document.getElementById('degree_slider');
+    const degreeValue = document.getElementById('degree_value');
+
+    if (degreeSlider && degreeValue) {
+        const syncDegreeFromSlider = () => {
+            const value = Math.min(Math.max(Number(degreeSlider.value), 1), 6);
+            degreeSlider.value = value;
+            degreeValue.textContent = value;
+            updateSliderColor(degreeSlider);
+        };
+
+        const syncDegreeFromBox = () => {
+            const raw = Number(degreeValue.textContent.trim());
+            if (!Number.isNaN(raw)) {
+                const value = Math.min(Math.max(Math.round(raw), 1), 6);
+                degreeSlider.value = value;
+                degreeValue.textContent = value;
+                updateSliderColor(degreeSlider);
+            }
+        };
+
+        degreeSlider.addEventListener('input', syncDegreeFromSlider);
+        degreeValue.addEventListener('blur', syncDegreeFromBox);
+        degreeValue.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                degreeValue.blur();
+            }
+        });
+
+        syncDegreeFromSlider();
+    }
+</script>
+<script>
+    const rateSlider = document.getElementById('rate_slider');
+    const rateValue = document.getElementById('rate_value');
+
+    if (rateSlider && rateValue) {
+        const syncRateFromSlider = () => {
+            const min = Number(rateSlider.min);
+            const max = Number(rateSlider.max);
+            const value = Math.min(Math.max(Number(rateSlider.value), min), max);
+
+            rateSlider.value = value;
+            rateValue.textContent = Number(value).toFixed(3);
+            updateSliderColor(rateSlider);
+        };
+
+        const syncRateFromBox = () => {
+            let raw = Number(rateValue.textContent.trim());
+            const min = Number(rateSlider.min);
+            const max = Number(rateSlider.max);
+
+            if (Number.isNaN(raw)) {
+                raw = Number(rateSlider.value);
+            }
+
+            const value = Math.min(Math.max(raw, min), max);
+            rateSlider.value = value;
+            rateValue.textContent = Number(value).toFixed(3);
+            updateSliderColor(rateSlider);
+        };
+
+        rateSlider.addEventListener('input', syncRateFromSlider);
+        rateValue.addEventListener('blur', syncRateFromBox);
+        rateValue.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                rateValue.blur();
+            }
+        });
+
+        syncRateFromSlider();
+    }
+</script>
+<script>
+    const speedSlider = document.getElementById('speed_slider');
+
+    if (speedSlider) {
+        const syncSpeedSlider = () => updateSliderColor(speedSlider);
+        speedSlider.addEventListener('input', syncSpeedSlider);
+        syncSpeedSlider();
+    }
+</script>
+
+<script>
+    (() => {
+        const canvas = document.getElementById('model_graph_canvas');
+        const context = canvas.getContext('2d');
+        const lossCanvas = document.getElementById('loss_graph_canvas');
+        const lossContext = lossCanvas.getContext('2d');
+        const lossStatus = document.getElementById('loss_status');
+        const lossReadout = document.getElementById('loss_readout');
+        const maxEpochInput = document.getElementById('max_epoch');
+        const stepCounter = document.getElementById('step_counter');
+        const degreeInput = document.getElementById('degree_slider');
+        const rateInput = document.getElementById('rate_slider');
+        const stepButton = document.getElementById('step_button');
+        const resetButton = document.getElementById('reset_button');
+        const playButton = document.getElementById('play_button');
+        const pauseButton = document.getElementById('pause_button');
+        const speedInput = document.getElementById('speed_slider');
+
+        let points = [];
+        let coefficients = [];
+        let previousCoefficients = [];
+        let currentMse = null;
+        let previousMse = null;
+        let bestMse = null;
+        let lastStepLearningRate = null;
+        let trainingError = false;
+        let converged = false;
+        let gradientNorm = null;
+        let lossHistory = [];
+        let inspectedEpoch = null;
+        let epoch = 0;
+        let running = false;
+        let timer = null;
+        const MSE_TOLERANCE = 1e-10;
+        const GRADIENT_TOLERANCE = 1e-5;
+
+        const degree = () => Number(degreeInput.value);
+        const learningRate = () => Number(rateInput.value);
+        const maxEpoch = () => Math.max(1, Math.round(Number(maxEpochInput.value) || 1));
+        const xPixel = (x, width) => 42 + ((x + 5) / 10) * (width - 62);
+        const yPixel = (y, height) => height - 34 - ((y + 4) / 8) * (height - 58);
+
+        function predict(x, model = coefficients) {
+            return model.reduce((sum, value, power) => sum + value * Math.pow(x, power), 0);
+        }
+
+        function calculateMse(model = coefficients) {
+            if (!points.length) return null;
+            return points.reduce((sum, point) => sum + (predict(point.x, model) - point.y) ** 2, 0) / points.length;
+        }
+
+        function calculateGradient() {
+            const gradient = Array(coefficients.length).fill(0);
+            points.forEach(point => {
+                const error = predict(point.x) - point.y;
+                gradient.forEach((_, power) => {
+                    gradient[power] += 2 * error * Math.pow(point.x, power) / points.length;
+                });
+            });
+            return gradient;
+        }
+
+        function stopTraining() {
+            running = false;
+            clearTimeout(timer);
+            timer = null;
+        }
+
+        function updateConvergence() {
+            gradientNorm = points.length ? Math.hypot(...calculateGradient()) : null;
+            converged = points.length > 0 && Number.isFinite(currentMse) &&
+                (currentMse <= MSE_TOLERANCE ||
+                    (Number.isFinite(gradientNorm) && gradientNorm <= GRADIENT_TOLERANCE));
+            if (converged) stopTraining();
+        }
+
+        function formatNumber(value, digits = 2) {
+            if (value === null || !Number.isFinite(value)) return '—';
+            const magnitude = Math.abs(value);
+            if (magnitude >= 10000 || (magnitude > 0 && magnitude < 10 ** -digits)) {
+                return value.toExponential(1);
+            }
+            return value.toFixed(digits);
+        }
+
+        function updateModelState() {
+            document.getElementById('model_degree').textContent = `(Degree = ${degree()})`;
+            document.getElementById('model_equation').innerHTML = '<span class="equation-expression"><span class="equation-term">ŷ =</span> ' + coefficients.map((value, power) => {
+                const sign = value < 0 ? '− ' : power > 0 ? '+ ' : '';
+                const variable = power === 0 ? '' : power === 1 ? 'x' : `x<sup>${power}</sup>`;
+                return `<span class="equation-term">${sign}<span class="equation-coefficient" title="${value}">${formatNumber(Math.abs(value))}</span>${variable}</span>`;
+            }).join(' ') + '</span>';
+            document.getElementById('coefficient_rows').innerHTML = coefficients.map((value, power) => {
+                const delta = value - previousCoefficients[power];
+                const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'zero';
+                const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '—';
+                const description = delta > 0 ? 'Increased by' : delta < 0 ? 'Decreased by' : 'Unchanged';
+                return `<div class="coefficient-row"><span>β<sub>${power}</sub></span><span class="coefficient-value" title="${value}">${formatNumber(value)}</span><span class="coefficient-delta delta-${direction}" title="${description} ${Math.abs(delta)}" aria-label="${description} ${formatNumber(Math.abs(delta), 3)}">${arrow} ${formatNumber(Math.abs(delta), 3)}</span></div>`;
+            }).join('');
+            document.getElementById('coefficient_changes').innerHTML = coefficients.map((value, power) =>
+                `<div class="coefficient-change">β<sub>${power}</sub>: <span title="${previousCoefficients[power]}">${formatNumber(previousCoefficients[power])}</span> → <span title="${value}">${formatNumber(value)}</span></div>`
+            ).join('');
+            document.getElementById('training_epoch').textContent = epoch;
+            document.getElementById('training_max_epoch').textContent = maxEpoch();
+            document.getElementById('current_mse').textContent = formatNumber(currentMse, 4);
+            document.getElementById('best_mse').textContent = formatNumber(bestMse, 4);
+
+            const example = points[0];
+            document.getElementById('predict_explanation').textContent = example
+                ? `Predict — Calculate ŷ for ${points.length} points; ŷ(${formatNumber(example.x)}) = ${formatNumber(predict(example.x))}`
+                : 'Predict — Add points to the graph to calculate ŷ';
+            document.getElementById('error_explanation').textContent = example
+                ? `Measure Error — Mean of (ŷ − y)² = ${formatNumber(currentMse, 4)}`
+                : 'Measure Error — Compare ŷ with actual y';
+            const changed = coefficients.filter((value, power) => value !== previousCoefficients[power]).length;
+            document.getElementById('adjust_explanation').textContent = epoch
+                ? `Adjust — Updated ${changed} of ${coefficients.length} coefficients at learning rate ${formatNumber(lastStepLearningRate, 3)}`
+                : `Adjust — Update ${coefficients.length} coefficients with gradient descent`;
+            const change = epoch ? currentMse - previousMse : null;
+            document.getElementById('improve_explanation').textContent = change === null
+                ? 'Improve — Take a step to compare MSE before and after'
+                : `Improve — MSE ${change < 0 ? 'decreased' : change > 0 ? 'increased' : 'is unchanged'}${change === 0 ? '' : ` by ${formatNumber(Math.abs(change), 4)}`} (${formatNumber(previousMse, 4)} → ${formatNumber(currentMse, 4)})`;
+            document.querySelectorAll('#training_explanation li').forEach((item, index) => {
+                const active = points.length > 0 && index === (epoch ? 3 : 0);
+                item.classList.toggle('active', active);
+                if (active) item.setAttribute('aria-current', 'step');
+                else item.removeAttribute('aria-current');
+            });
+            document.getElementById('training_message').textContent = trainingError
+                ? 'Training stopped: values became too large. Lower the learning rate or reset the model.'
+                : !points.length ? 'No data — add points or choose a preset.'
+                    : converged ? (currentMse <= MSE_TOLERANCE
+                        ? `Converged at epoch ${epoch} — MSE is at or below 1e−10.`
+                        : `Converged at epoch ${epoch} — the MSE gradient norm is at or below 1e−5.`)
+                        : epoch >= maxEpoch() ? 'Maximum epoch reached. Increase Max Epoch to continue, or reset.'
+                            : running ? 'Training — each epoch updates the curve and all values above.'
+                                : epoch ? 'Paused — press Step or Play to continue.'
+                                    : 'Ready — press Step or Play to train on the graph data.';
+            const status = trainingError ? 'Stopped' : !points.length ? 'No data' : converged ? 'Converged'
+                : epoch >= maxEpoch() ? 'Max epochs' : running ? 'Training' : epoch ? 'Paused' : 'Ready';
+            lossStatus.textContent = status;
+            lossStatus.dataset.state = status.toLowerCase();
+            stepButton.disabled = !points.length || converged || epoch >= maxEpoch();
+        }
+
+        function updateStepCounter() {
+            maxEpochInput.value = maxEpoch();
+            if (epoch >= maxEpoch()) stopTraining();
+            stepCounter.textContent = `STEP ${epoch} / ${maxEpoch()}`;
+            updateModelState();
+        }
+
+        function resetModel() {
+            stopTraining();
+            epoch = 0;
+            coefficients = Array(degree() + 1).fill(0);
+            coefficients[0] = 0.1;
+            previousCoefficients = [...coefficients];
+            currentMse = calculateMse();
+            previousMse = currentMse;
+            bestMse = currentMse;
+            lastStepLearningRate = null;
+            trainingError = false;
+            lossHistory = currentMse === null ? [] : [{ epoch: 0, mse: currentMse }];
+            inspectedEpoch = null;
+            updateConvergence();
+            updateStepCounter();
+            drawGraph();
+            drawLossGraph();
+        }
+
+        function makePoints(type) {
+            points = [];
+            for (let index = 0; index < 26; index++) {
+                const x = -5 + (index * 10 / 25);
+                let y;
+                if (type === 'linear') y = 0.65 * x + 0.4;
+                else if (type === 'wave') y = 1.35 * Math.sin(x * 0.9) + 0.18 * x;
+                else if (type === 'random') y = Math.random() * 5 - 2.5;
+                else y = 1.4 * Math.sin(x * 0.8) + 0.12 * x;
+                points.push({ x, y: y + (Math.random() - 0.5) * 0.55 });
+            }
+            resetModel();
+        }
+
+        function trainOneStep() {
+            if (!points.length || converged || epoch >= maxEpoch()) return false;
+            const gradient = calculateGradient();
+            const nextCoefficients = coefficients.map((value, power) =>
+                value - learningRate() * gradient[power] / Math.max(1, Math.pow(3, power))
+            );
+            const nextMse = calculateMse(nextCoefficients);
+            if (!nextCoefficients.every(Number.isFinite) || !Number.isFinite(nextMse)) {
+                stopTraining();
+                trainingError = true;
+                updateModelState();
+                return false;
+            }
+            previousCoefficients = [...coefficients];
+            previousMse = currentMse;
+            coefficients = nextCoefficients;
+            currentMse = nextMse;
+            bestMse = Math.min(bestMse, currentMse);
+            lastStepLearningRate = learningRate();
+            trainingError = false;
+            epoch += 1;
+            lossHistory.push({ epoch, mse: currentMse });
+            inspectedEpoch = null;
+            updateConvergence();
+            updateStepCounter();
+            drawGraph();
+            drawLossGraph();
+            return true;
+        }
+
+        function drawLossGraph() {
+            const { width, height } = lossCanvas.getBoundingClientRect();
+            if (width <= 0 || height <= 0) return;
+            const ctx = lossContext;
+            const left = Math.min(86, width * 0.28);
+            const right = Math.max(left + 1, width - 20);
+            const top = 24;
+            const bottom = height - 38;
+            const plotWidth = right - left;
+            const plotHeight = bottom - top;
+            // Normalize before multiplying by pixels, even for very large finite losses.
+            const peak = lossHistory.reduce((max, entry) => Math.max(max, entry.mse), 1e-12);
+            const lastEpoch = Math.max(1, epoch);
+            const px = value => left + (value / lastEpoch) * plotWidth;
+            const py = value => bottom - (value / peak) * plotHeight;
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#080B10';
+            ctx.fillRect(0, 0, width, height);
+            ctx.font = '11px IBM Plex Mono, monospace';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.textBaseline = 'middle';
+            for (let index = 0; index <= 4; index++) {
+                const y = bottom - (index / 4) * plotHeight;
+                ctx.strokeStyle = '#293246';
+                ctx.beginPath();
+                ctx.moveTo(left, y);
+                ctx.lineTo(right, y);
+                ctx.stroke();
+                ctx.fillStyle = '#9ca8ba';
+                ctx.textAlign = 'right';
+                ctx.fillText(formatNumber(peak * (index / 4), 4), left - 8, y);
+            }
+            const tickCount = Math.min(4, lastEpoch);
+            for (let index = 0; index <= tickCount; index++) {
+                const tick = Math.round(index * lastEpoch / tickCount);
+                ctx.fillStyle = '#9ca8ba';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(tick), px(tick), bottom + 16);
+            }
+            ctx.fillStyle = '#bcb9b9';
+            ctx.textAlign = 'left';
+            ctx.fillText('MSE', left, 10);
+            ctx.textAlign = 'right';
+            ctx.fillText('Epoch', right, height - 6);
+            if (!lossHistory.length) {
+                ctx.fillStyle = '#bcb9b9';
+                ctx.textAlign = 'center';
+                ctx.fillText('Add data to track MSE.', left + plotWidth / 2, top + plotHeight / 2);
+                lossReadout.textContent = 'No data — choose a preset or add points to the graph.';
+                lossCanvas.setAttribute('aria-label', 'Loss graph: no data.');
+                return;
+            }
+            ctx.strokeStyle = '#c9e63c';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(left, py(bestMse));
+            ctx.lineTo(right, py(bestMse));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#80ffdb';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            lossHistory.forEach((entry, index) => {
+                const x = px(entry.epoch);
+                const y = py(entry.mse);
+                index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            const selected = lossHistory[inspectedEpoch] || lossHistory[lossHistory.length - 1];
+            if (inspectedEpoch !== null) {
+                ctx.strokeStyle = '#8793a8';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 4]);
+                ctx.beginPath();
+                ctx.moveTo(px(selected.epoch), top);
+                ctx.lineTo(px(selected.epoch), bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            ctx.fillStyle = '#80ffdb';
+            ctx.beginPath();
+            ctx.arc(px(selected.epoch), py(selected.mse), 4, 0, Math.PI * 2);
+            ctx.fill();
+            lossReadout.textContent = `Epoch ${selected.epoch} · MSE ${formatNumber(selected.mse, 6)} · Best MSE ${formatNumber(bestMse, 6)}`;
+            lossCanvas.setAttribute('aria-label', `MSE over epochs 0 to ${epoch}. Current MSE ${formatNumber(currentMse, 6)}. Best MSE ${formatNumber(bestMse, 6)}.`);
+        }
+
+        function resizeLossGraph() {
+            const bounds = lossCanvas.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            lossCanvas.width = Math.round(bounds.width * ratio);
+            lossCanvas.height = Math.round(bounds.height * ratio);
+            lossContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+            drawLossGraph();
+        }
+
+        lossCanvas.addEventListener('pointermove', event => {
+            if (!lossHistory.length) return;
+            const bounds = lossCanvas.getBoundingClientRect();
+            const left = Math.min(86, bounds.width * 0.28);
+            const fraction = (event.clientX - bounds.left - left) / Math.max(1, bounds.width - 20 - left);
+            inspectedEpoch = Math.max(0, Math.min(epoch, Math.round(fraction * Math.max(1, epoch))));
+            drawLossGraph();
+        });
+        lossCanvas.addEventListener('pointerleave', () => {
+            inspectedEpoch = null;
+            drawLossGraph();
+        });
+
+        function drawGraph() {
+            const width = canvas.getBoundingClientRect().width;
+            const height = canvas.getBoundingClientRect().height;
+            context.clearRect(0, 0, width, height);
+            context.fillStyle = '#080B10';
+            context.fillRect(0, 0, width, height);
+            context.strokeStyle = '#323131';
+            context.lineWidth = 1;
+            context.font = '11px IBM Plex Mono, monospace';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            for (let x = -5; x <= 5; x++) {
+                const px = xPixel(x, width);
+                context.beginPath();
+                context.moveTo(px, 0);
+                context.lineTo(px, height);
+                context.stroke();
+                context.fillStyle = '#9ca8ba';
+                context.fillText(String(x), px, height - 17);
+            }
+            for (let y = -4; y <= 4; y += 2) {
+                const py = yPixel(y, height);
+                context.beginPath();
+                context.moveTo(0, py);
+                context.lineTo(width, py);
+                context.stroke();
+                context.fillStyle = '#9ca8ba';
+                context.textAlign = 'right';
+                context.fillText(String(y), 34, py);
+            }
+            context.fillStyle = '#9ca8ba';
+            context.font = '12px IBM Plex Mono, monospace';
+            context.textAlign = 'left';
+            context.textBaseline = 'alphabetic';
+            context.fillText('y', 12, 20);
+            context.fillText('x', width - 22, height - 12);
+
+            points.forEach(point => {
+                const px = xPixel(point.x, width);
+                const actualY = yPixel(point.y, height);
+                const predictedY = yPixel(predict(point.x), height);
+                context.setLineDash([4, 4]);
+                context.strokeStyle = '#8793a8';
+                context.beginPath();
+                context.moveTo(px, actualY);
+                context.lineTo(px, predictedY);
+                context.stroke();
+                context.setLineDash([]);
+            });
+
+            if (points.length) {
+                context.strokeStyle = '#92FFD9';
+                context.lineWidth = 2.5;
+                context.beginPath();
+                for (let index = 0; index <= 200; index++) {
+                    const x = -5 + index * 10 / 200;
+                    const px = xPixel(x, width);
+                    const py = yPixel(predict(x), height);
+                    index === 0 ? context.moveTo(px, py) : context.lineTo(px, py);
+                }
+                context.stroke();
+            }
+
+            points.forEach(point => {
+                context.fillStyle = '#D0A4FF';
+                context.strokeStyle = '#f0eaff';
+                context.lineWidth = 1;
+                context.beginPath();
+                context.arc(xPixel(point.x, width), yPixel(point.y, height), 5, 0, Math.PI * 2);
+                context.fill();
+                context.stroke();
+            });
+        }
+
+        function resizeGraph() {
+            const bounds = canvas.getBoundingClientRect();
+            const ratio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(bounds.width * ratio);
+            canvas.height = Math.round(bounds.height * ratio);
+            context.setTransform(ratio, 0, 0, ratio, 0, 0);
+            drawGraph();
+        }
+
+        // Use the graph panel's height as a minimum; let model content grow below it.
+        const dataPanel = document.getElementById('canvas_tl');
+        const modelPanel = document.getElementById('canvas_tr');
+        let lastPanelHeight = 0;
+        const syncPanelHeight = () => {
+            const height = dataPanel.getBoundingClientRect().height;
+            if (height === lastPanelHeight) return;
+            lastPanelHeight = height;
+            modelPanel.style.setProperty('--data-panel-height', `${height}px`);
+        };
+        if (typeof ResizeObserver !== 'undefined') {
+            const panelResizeObserver = new ResizeObserver(syncPanelHeight);
+            panelResizeObserver.observe(dataPanel, { box: 'border-box' });
+        } else {
+            window.addEventListener('resize', syncPanelHeight);
+        }
+        syncPanelHeight();
+
+        function graphCoordinatesFromEvent(event) {
+            const bounds = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - bounds.left;
+            const mouseY = event.clientY - bounds.top;
+
+            return {
+                x: -5 + ((mouseX - 42) / (bounds.width - 62)) * 10,
+                y: ((bounds.height - 34 - mouseY) / (bounds.height - 58)) * 8 - 4
+            };
+        }
+
+        canvas.addEventListener('click', event => {
+            const point = graphCoordinatesFromEvent(event);
+            if (point.x < -5 || point.x > 5 || point.y < -4 || point.y > 4) return;
+            points.push(point);
+            resetModel();
+        });
+
+        canvas.addEventListener('contextmenu', event => {
+            event.preventDefault();
+            const { x, y } = graphCoordinatesFromEvent(event);
+            let closest = -1;
+            let distance = Infinity;
+            points.forEach((point, index) => {
+                const nextDistance = Math.hypot(point.x - x, point.y - y);
+                if (nextDistance < distance) {
+                    distance = nextDistance;
+                    closest = index;
+                }
+            });
+            if (closest >= 0 && distance < 0.7) {
+                points.splice(closest, 1);
+                resetModel();
+            }
+        });
+
+        document.querySelectorAll('.button_preset').forEach(button => {
+            button.addEventListener('click', () => makePoints(button.dataset.preset));
+        });
+        document.getElementById('random_data_button').addEventListener('click', () => makePoints('random'));
+        document.getElementById('clear_data_button').addEventListener('click', () => {
+            points = [];
+            resetModel();
+        });
+        maxEpochInput.addEventListener('input', updateStepCounter);
+        degreeInput.addEventListener('input', resetModel);
+        document.getElementById('degree_value').addEventListener('blur', () => {
+            if (coefficients.length !== degree() + 1) resetModel();
+        });
+        stepButton.addEventListener('click', trainOneStep);
+        resetButton.addEventListener('click', resetModel);
+        playButton.addEventListener('click', () => {
+            if (running || !points.length || converged || epoch >= maxEpoch()) return;
+            running = true;
+            const run = () => {
+                if (!running || !points.length || converged || epoch >= maxEpoch()) {
+                    stopTraining();
+                    updateModelState();
+                    return;
+                }
+                if (!trainOneStep()) return;
+                if (running) timer = setTimeout(run, 750 - Number(speedInput.value) * 65);
+            };
+            run();
+        });
+        pauseButton.addEventListener('click', () => {
+            stopTraining();
+            updateModelState();
+        });
+        window.addEventListener('resize', resizeGraph);
+        window.addEventListener('resize', resizeLossGraph);
+        if (typeof ResizeObserver !== 'undefined') {
+            const lossResizeObserver = new ResizeObserver(resizeLossGraph);
+            lossResizeObserver.observe(lossCanvas.parentElement);
+        }
+
+        makePoints('linear');
+        resizeGraph();
+        resizeLossGraph();
+    })();
+</script>
