@@ -31,13 +31,13 @@
                     <canvas id="model_graph_canvas"></canvas>
                 </div>
                 <div>
-                    <div class="font-20 ml-30">PRESET DATA SET</div>
+                    <div class="font-20 ml-30 ">PRESET DATA SET</div>
                 </div>
-                <div class="flex-row ml-20 mr-20 space_around mt-10 preset-controls">
+                <div class="flex-row ml-20 mr-20 space_around mt-20 preset-controls">
                     <button class="button_purple button_preset active" data-preset="linear">Linear</button>
                     <button class="button_purple button_preset" data-preset="curve">Curve</button>
                     <button class="button_purple button_preset" data-preset="wave">Wave</button>
-                    <button class="button_purple button_preset" data-preset="random">Random</button>
+                    <!-- <button class="button_purple button_preset" data-preset="random">Random</button> -->
                     <div class="vertical_divider"></div>
                     <button id="random_data_button" class="button_purple button_container"><i
                             data-lucide="shuffle"></i>Random Data</button>
@@ -191,7 +191,7 @@
 </body>
 <footer>
     <div class="flex-row space_between center">
-        <p class="font-14">67011213 Nuttapat Wuttiutadom, 67011137 Kempetchompoo Wongyutthachak</p>
+        <p class="font-14">67011213 Nuttapat Wuttiutadom, 67011137 Kempetchompoo Wongyutthachak, 67011272 Piyawit Nonthanakcheevin, 67011274 Pongpichaed Thiansiriwongsakul, 67011392 Yotsakrit Rueangkaeo</p>
         <p class="">CEi KMITL</p>
     </div>
 
@@ -1421,7 +1421,9 @@ createIcons({
                 ctx.textAlign = 'right';
                 ctx.fillText(formatNumber(peak * (index / 4), 4), left - 8, y);
             }
-            const tickCount = Math.min(4, lastEpoch);
+            // Show every epoch when it fits; space labels out only on longer runs.
+            const tickSpacing = Math.max(32, ctx.measureText(String(lastEpoch)).width + 16);
+            const tickCount = Math.min(lastEpoch, Math.max(1, Math.floor(plotWidth / tickSpacing)));
             for (let index = 0; index <= tickCount; index++) {
                 const tick = Math.round(index * lastEpoch / tickCount);
                 ctx.fillStyle = '#9ca8ba';
