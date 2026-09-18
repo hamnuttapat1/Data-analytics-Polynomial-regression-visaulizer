@@ -20,7 +20,12 @@
             <div class="canvas" id="canvas_tl">
                 <div class="flex-row space_between mx-30">
                     <div class="flex-row center mt-10">
-                        <i data-lucide="grip"></i>
+                        <svg class="pr-icon pr-icon-small pr-icon-accent" xmlns="http://www.w3.org/2000/svg"
+                            width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle cx="8" cy="5" r="1.5" /><circle cx="16" cy="5" r="1.5" />
+                            <circle cx="8" cy="12" r="1.5" /><circle cx="16" cy="12" r="1.5" />
+                            <circle cx="8" cy="19" r="1.5" /><circle cx="16" cy="19" r="1.5" />
+                        </svg>
                         <div class="ml-10 font-24 purple">DATA CANVAS</div>
                     </div>
                     <div>
@@ -39,15 +44,27 @@
                     <button class="button_purple button_preset" data-preset="wave">Wave</button>
                     <!-- <button class="button_purple button_preset" data-preset="random">Random</button> -->
                     <div class="vertical_divider"></div>
-                    <button id="random_data_button" class="button_purple button_container"><i
-                            data-lucide="shuffle"></i>Random Data</button>
-                    <button id="clear_data_button" class="button_purple button_container"><i
-                            data-lucide="trash-2"></i>Clear Data</button>
+                    <button id="random_data_button" class="button_purple button_container">
+                        <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
+                            width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 3.5-2 5-5m2-2c1.5-3 3-5 5-5h3m-4-4 4 4-4 4" />
+                        </svg>Random Data
+                    </button>
+                    <button id="clear_data_button" class="button_purple button_container">
+                        <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
+                            width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7" />
+                        </svg>Clear Data
+                    </button>
                 </div>
             </div>
             <div class="canvas" id="canvas_bl">
                 <div class="flex-row">
-                    <i data-lucide="settings"></i>
+                    <svg class="pr-icon pr-icon-small pr-icon-accent pr-icon-settings" xmlns="http://www.w3.org/2000/svg"
+                        width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M3 6h4m6 0h8M3 18h10m6 0h2" />
+                        <circle cx="10" cy="6" r="3" /><circle cx="16" cy="18" r="3" />
+                    </svg>
                     <p class="purple font-24 ml-10">HYPERPARAMETERS & CONTROL</p>
                 </div>
                 <div>
@@ -82,20 +99,32 @@
                             <div class="font-20 mt-20 ml-20">EXECUTION CONTROLS</div>
                             <div class="flex-row space_around mt-20 mx-10">
                                 <button id="reset_button" class="center gap-10 justify_center">
-                                    <i data-lucide="rotate-ccw"></i>
+                                    <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
+                                        width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M4 4v6h6M4 10a8 8 0 1 1 1 8" />
+                                    </svg>
                                     <div class="white">Reset</div>
                                 </button>
                                 <button id="step_button" class="center gap-10 justify_center">
                                     <div class="white">Step</div>
-                                    <i data-lucide="move-right"></i>
+                                    <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
+                                        width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="M3 12h18m-6-6 6 6-6 6" />
+                                    </svg>
                                 </button>
                             </div>
                             <div id="play_button" class="flex-row center mx-20 mt-10 gap-10 justify_center">
-                                <i data-lucide="play"></i>
+                                <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
+                                    width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="m7 4 13 8-13 8Z" />
+                                </svg>
                                 <div>Play until Convergence</div>
                             </div>
                             <div id="pause_button" class="flex-row center mx-20 mt-10 gap-10 justify_center">
-                                <i data-lucide="pause"></i>
+                                <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
+                                    width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path d="M6 4h4v16H6Zm8 0h4v16h-4Z" />
+                                </svg>
                                 <div>Pause</div>
                             </div>
                             <div class="mt-10 ml-20">Speed</div>
@@ -115,7 +144,10 @@
             <div class="canvas" id="canvas_tr">
                 <div class="flex-row center space_between mx-30 model-heading">
                     <div class="flex-row center gap-10">
-                        <i data-lucide="box"></i>
+                        <svg class="pr-icon" xmlns="http://www.w3.org/2000/svg"
+                            width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="m12 2 9 5v10l-9 5-9-5V7Zm-9 5 9 5 9-5m-9 5v10" />
+                        </svg>
                         <div>MODEL STATE (STEP-BY-STEP)</div>
                     </div>
                     <div id="step_counter">STEP 0 / 100</div>
@@ -161,7 +193,10 @@
             <div class="canvas" id="canvas_br">
                 <div class="loss-heading flex-row center space_between mx-30">
                     <div class="flex-row center gap-10 purple">
-                        <i data-lucide="chart-line"></i>
+                        <svg class="pr-icon" xmlns="http://www.w3.org/2000/svg"
+                            width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3 3v18h18M6 15l5-6 4 3 6-8" />
+                        </svg>
                         <h2>LOSS GRAPH</h2>
                     </div>
                     <span id="loss_status">Ready</span>
@@ -188,7 +223,6 @@
         </div>
     </div>
 
-</body>
 <footer>
     <div class="flex-row space_between center">
         <p class="font-14">67011213 Nuttapat Wuttiutadom, 67011137 Kempetchompoo Wongyutthachak, 67011272 Piyawit Nonthanakcheevin, 67011274 Pongpichaed Thiansiriwongsakul, 67011392 Yotsakrit Rueangkaeo</p>
@@ -196,10 +230,6 @@
     </div>
 
 </footer>
-
-</html>
-
-<!-- <i data-lucide="grip"></i> -->
 
 <style>
     body {
@@ -405,55 +435,31 @@
 
     }
 
-    .lucide-grip {
-        color: #E3C9FF;
-
-        width: 16px;
-        height: 16px;
+    .pr-icon {
+        display: inline-block;
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
     }
 
-    .lucide-shuffle {
+    .pr-icon-small {
         color: #ffffff;
         width: 16px;
         height: 16px;
     }
 
-    .lucide-trash-2 {
-        color: #ffffff;
-        width: 16px;
-        height: 16px;
+    .pr-icon-accent {
+        color: #E3C9FF;
     }
 
-    .lucide-settings {
-        color: #E3C9FF;
+    .pr-icon-settings {
         margin-left: 30px;
         margin-top: 30px;
-        width: 16px;
-        height: 16px;
-    }
-
-    .lucide-rotate-ccw {
-        color: #ffffff;
-        width: 16px;
-        height: 16px;
-    }
-
-    .lucide-move-right {
-        color: #ffffff;
-        width: 15px;
-        height: 16px;
-    }
-
-    .lucide-play {
-        color: #ffffff;
-        width: 16px;
-        height: 16px;
-    }
-
-    .lucide-pause {
-        color: #ffffff;
-        width: 16px;
-        height: 16px;
     }
 
     .canvas {
@@ -1045,20 +1051,6 @@
         }
     }
 </style>
-
-<!-- <script>
-import { createIcons, Grip } from 'lucide';
-
-createIcons({
-  icons: {
-    Grip
-  }
-});
-</script> -->
-
-
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>if (window.lucide) lucide.createIcons();</script>
 
 <script>
     function updateSliderColor(slider) {
@@ -1682,3 +1674,5 @@ createIcons({
         resizeLossGraph();
     })();
 </script>
+</body>
+</html>
