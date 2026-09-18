@@ -170,12 +170,20 @@
                     <section class="model_card" aria-labelledby="training_heading">
                         <h2 id="training_heading">TRAINING STATUS</h2>
                         <dl class="training-stats">
-                            <dt>Epoch</dt>
-                            <dd><span id="training_epoch">0</span> /<span id="training_max_epoch">100</span></dd>
-                            <dt>Current MSE</dt>
-                            <dd id="current_mse">—</dd>
-                            <dt>Best MSE</dt>
-                            <dd id="best_mse">—</dd>
+                            <div class="flex-row space_between">
+                                <div>
+                                    <dt>Epoch</dt>
+                                    <dd><span id="training_epoch">0</span> /<span id="training_max_epoch">100</span></dd>
+                                    <dt>Current MSE</dt>
+                                    <dd id="current_mse">—</dd>
+                                </div>
+                                <div>
+                                    <dt>Best MSE</dt>
+                                    <dd id="best_mse">—</dd>
+                                    <dt>Gradient Norm</dt>
+                                    <dd id="gradient_norm">—</dd>
+                                </div>
+                            </div>
                         </dl>
                     </section>
                 </div>
@@ -216,8 +224,9 @@
                     at epoch 0.</p>
                 <details class="convergence-rule mx-30">
                     <summary>When does training converge?</summary>
-                    <p>Training stops when MSE ≤ 1e−10 or the MSE gradient norm ≤ 1e−5. A small gradient means the error
-                        changes very little when the coefficients change. Max Epoch is a separate limit.</p>
+                    <p>Training stops when MSE ≤ 1e−10 or the gradient norm in scaled polynomial features ≤ 1e−5.
+                        Scaling keeps training stable; the equation still uses the original x units. Noisy data can
+                        converge with MSE above zero. Max Epoch is a separate limit; increase it to continue training.</p>
                 </details>
             </div>
         </div>
@@ -327,6 +336,18 @@
 
     .gap-30 {
         gap: 30px;
+    }
+    .gap-50 {
+        gap: 50px;
+    }
+    .gap-60 {
+        gap: 60px;
+    }
+    .gap-70 {
+        gap: 70px;
+    }
+    .gap-100 {
+        gap: 100px;
     }
 
     .w-395 {
@@ -966,7 +987,10 @@
         color: #c9e63c;
         font-size: 18px;
     }
-
+    #gradient_norm {
+        color: #ff7070;
+        font-size: 18px;
+    }
     .how-it-works {
         margin-top: 40px;
         padding: 16px 24px;
@@ -1092,13 +1116,14 @@
         };
 
         const syncDegreeFromBox = () => {
-            const raw = Number(degreeValue.textContent.trim());
-            if (!Number.isNaN(raw)) {
-                const value = Math.min(Math.max(Math.round(raw), 1), 6);
-                degreeSlider.value = value;
-                degreeValue.textContent = value;
-                updateSliderColor(degreeSlider);
-            }
+            const text = degreeValue.textContent.trim();
+            const raw = Number(text);
+            const value = text && Number.isFinite(raw)
+                ? Math.min(Math.max(Math.round(raw), 1), 6)
+                : Number(degreeSlider.value);
+            degreeSlider.value = value;
+            degreeValue.textContent = degreeSlider.value;
+            updateSliderColor(degreeSlider);
         };
 
         degreeSlider.addEventListener('input', syncDegreeFromSlider);
@@ -1129,17 +1154,20 @@
         };
 
         const syncRateFromBox = () => {
-            let raw = Number(rateValue.textContent.trim());
+            const text = rateValue.textContent.trim();
+            let raw = Number(text);
             const min = Number(rateSlider.min);
             const max = Number(rateSlider.max);
 
-            if (Number.isNaN(raw)) {
+            if (!text || !Number.isFinite(raw)) {
                 raw = Number(rateSlider.value);
             }
 
             const value = Math.min(Math.max(raw, min), max);
             rateSlider.value = value;
-            rateValue.textContent = Number(value).toFixed(3);
+            // Range inputs snap to step=0.001. Display the value the browser
+            // accepted, which is also the value used by gradient descent.
+            rateValue.textContent = Number(rateSlider.value).toFixed(3);
             updateSliderColor(rateSlider);
         };
 
@@ -1185,6 +1213,10 @@
 
         let points = [];
         let coefficients = [];
+        let trainingWeights = [];
+        let featureRows = [];
+        let featureScales = [];
+        let basisPolynomials = [];
         let previousCoefficients = [];
         let currentMse = null;
         let previousMse = null;
@@ -1194,6 +1226,7 @@
         let converged = false;
         let gradientNorm = null;
         let lossHistory = [];
+        let lossPeak = 1e-12;
         let inspectedEpoch = null;
         let epoch = 0;
         let running = false;
@@ -1202,26 +1235,72 @@
         const GRADIENT_TOLERANCE = 1e-5;
 
         const degree = () => Number(degreeInput.value);
-        const learningRate = () => Number(rateInput.value);
-        const maxEpoch = () => Math.max(1, Math.round(Number(maxEpochInput.value) || 1));
+        const learningRate = () => Math.min(0.1, Math.max(0.001, Number(rateInput.value) || 0.01));
+        const maxEpoch = () => {
+            const value = Number(maxEpochInput.value);
+            return Number.isFinite(value) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, Math.round(value))) : 100;
+        };
         const xPixel = (x, width) => 42 + ((x + 5) / 10) * (width - 62);
         const yPixel = (y, height) => height - 34 - ((y + 4) / 8) * (height - 58);
 
         function predict(x, model = coefficients) {
-            return model.reduce((sum, value, power) => sum + value * Math.pow(x, power), 0);
+            return model.reduceRight((sum, value) => sum * x + value, 0);
         }
 
-        function calculateMse(model = coefficients) {
+        function polynomialFeatures(x) {
+            const z = x / 5;
+            const values = [1, z];
+            for (let power = 2; power <= degree(); power++) {
+                values.push(((2 * power - 1) * z * values[power - 1] -
+                    (power - 1) * values[power - 2]) / power);
+            }
+            return values.slice(0, degree() + 1);
+        }
+
+        function prepareTrainingFeatures() {
+            // Train in an RMS-normalized Legendre basis instead of unstable raw x powers.
+            // The polynomial family and MSE objective are unchanged.
+            const count = degree() + 1;
+            const rawRows = points.map(point => polynomialFeatures(point.x));
+            featureScales = Array.from({ length: count }, (_, power) => Math.max(1e-6,
+                Math.sqrt(rawRows.reduce((sum, row) => sum + row[power] ** 2, 0) / Math.max(1, points.length))));
+            featureRows = rawRows.map(row => row.map((value, power) => value / featureScales[power]));
+            // Mean square <= 1 for every feature bounds the MSE Hessian's largest
+            // eigenvalue by 2 * count <= 14, making all slider rates <= 0.1 stable.
+            basisPolynomials = [Array(count).fill(0), Array(count).fill(0)];
+            basisPolynomials[0][0] = 1;
+            basisPolynomials[1][1] = 1 / 5;
+            for (let power = 2; power < count; power++) {
+                const polynomial = Array(count).fill(0);
+                for (let term = 0; term < count; term++) {
+                    polynomial[term] = (term ? (2 * power - 1) / (5 * power) *
+                        basisPolynomials[power - 1][term - 1] : 0) -
+                        (power - 1) / power * basisPolynomials[power - 2][term];
+                }
+                basisPolynomials.push(polynomial);
+            }
+        }
+
+        function toOriginalCoefficients(weights) {
+            return weights.map((_, term) => weights.reduce((sum, value, power) =>
+                sum + value * basisPolynomials[power][term] / featureScales[power], 0));
+        }
+
+        function trainingPrediction(index, weights = trainingWeights) {
+            return featureRows[index].reduce((sum, value, power) => sum + value * weights[power], 0);
+        }
+
+        function calculateMse(weights = trainingWeights) {
             if (!points.length) return null;
-            return points.reduce((sum, point) => sum + (predict(point.x, model) - point.y) ** 2, 0) / points.length;
+            return points.reduce((sum, point, index) => sum + (trainingPrediction(index, weights) - point.y) ** 2, 0) / points.length;
         }
 
         function calculateGradient() {
             const gradient = Array(coefficients.length).fill(0);
-            points.forEach(point => {
-                const error = predict(point.x) - point.y;
+            points.forEach((point, index) => {
+                const error = trainingPrediction(index) - point.y;
                 gradient.forEach((_, power) => {
-                    gradient[power] += 2 * error * Math.pow(point.x, power) / points.length;
+                    gradient[power] += 2 * error * featureRows[index][power] / points.length;
                 });
             });
             return gradient;
@@ -1251,6 +1330,8 @@
         }
 
         function updateModelState() {
+            document.getElementById('best_mse').textContent = formatNumber(bestMse, 6);
+            document.getElementById('gradient_norm').textContent = formatNumber(gradientNorm, 8);
             document.getElementById('model_degree').textContent = `(Degree = ${degree()})`;
             document.getElementById('model_equation').innerHTML = '<span class="equation-expression"><span class="equation-term">ŷ =</span> ' + coefficients.map((value, power) => {
                 const sign = value < 0 ? '− ' : power > 0 ? '+ ' : '';
@@ -1269,8 +1350,8 @@
             ).join('');
             document.getElementById('training_epoch').textContent = epoch;
             document.getElementById('training_max_epoch').textContent = maxEpoch();
-            document.getElementById('current_mse').textContent = formatNumber(currentMse, 4);
-            document.getElementById('best_mse').textContent = formatNumber(bestMse, 4);
+            document.getElementById('current_mse').textContent = formatNumber(currentMse, 6);
+            document.getElementById('best_mse').textContent = formatNumber(bestMse, 6);
 
             const example = points[0];
             document.getElementById('predict_explanation').textContent = example
@@ -1281,8 +1362,8 @@
                 : 'Measure Error — Compare ŷ with actual y';
             const changed = coefficients.filter((value, power) => value !== previousCoefficients[power]).length;
             document.getElementById('adjust_explanation').textContent = epoch
-                ? `Adjust — Updated ${changed} of ${coefficients.length} coefficients at learning rate ${formatNumber(lastStepLearningRate, 3)}`
-                : `Adjust — Update ${coefficients.length} coefficients with gradient descent`;
+                ? `Adjust — Updated ${changed} of ${coefficients.length} coefficients using scaled features at learning rate ${formatNumber(lastStepLearningRate, 3)}`
+                : `Adjust — Update ${coefficients.length} coefficients with gradient descent on scaled features`;
             const change = epoch ? currentMse - previousMse : null;
             document.getElementById('improve_explanation').textContent = change === null
                 ? 'Improve — Take a step to compare MSE before and after'
@@ -1298,9 +1379,9 @@
                 : !points.length ? 'No data — add points or choose a preset.'
                     : converged ? (currentMse <= MSE_TOLERANCE
                         ? `Converged at epoch ${epoch} — MSE is at or below 1e−10.`
-                        : `Converged at epoch ${epoch} — the MSE gradient norm is at or below 1e−5.`)
+                        : `Converged at epoch ${epoch} — the scaled-feature gradient norm is at or below 1e−5.`)
                         : epoch >= maxEpoch() ? 'Maximum epoch reached. Increase Max Epoch to continue, or reset.'
-                            : running ? 'Training — each epoch updates the curve and all values above.'
+                            : running ? `Training — scaled-feature gradient norm ${formatNumber(gradientNorm, 6)} (convergence threshold 1e−5).`
                                 : epoch ? 'Paused — press Step or Play to continue.'
                                     : 'Ready — press Step or Play to train on the graph data.';
             const status = trainingError ? 'Stopped' : !points.length ? 'No data' : converged ? 'Converged'
@@ -1320,8 +1401,10 @@
         function resetModel() {
             stopTraining();
             epoch = 0;
-            coefficients = Array(degree() + 1).fill(0);
-            coefficients[0] = 0.1;
+            prepareTrainingFeatures();
+            trainingWeights = Array(degree() + 1).fill(0);
+            trainingWeights[0] = 0.1 * featureScales[0];
+            coefficients = toOriginalCoefficients(trainingWeights);
             previousCoefficients = [...coefficients];
             currentMse = calculateMse();
             previousMse = currentMse;
@@ -1329,6 +1412,7 @@
             lastStepLearningRate = null;
             trainingError = false;
             lossHistory = currentMse === null ? [] : [{ epoch: 0, mse: currentMse }];
+            lossPeak = Math.max(currentMse || 0, 1e-12);
             inspectedEpoch = null;
             updateConvergence();
             updateStepCounter();
@@ -1353,10 +1437,9 @@
         function trainOneStep() {
             if (!points.length || converged || epoch >= maxEpoch()) return false;
             const gradient = calculateGradient();
-            const nextCoefficients = coefficients.map((value, power) =>
-                value - learningRate() * gradient[power] / Math.max(1, Math.pow(3, power))
-            );
-            const nextMse = calculateMse(nextCoefficients);
+            const nextWeights = trainingWeights.map((value, power) => value - learningRate() * gradient[power]);
+            const nextCoefficients = toOriginalCoefficients(nextWeights);
+            const nextMse = calculateMse(nextWeights);
             if (!nextCoefficients.every(Number.isFinite) || !Number.isFinite(nextMse)) {
                 stopTraining();
                 trainingError = true;
@@ -1365,6 +1448,7 @@
             }
             previousCoefficients = [...coefficients];
             previousMse = currentMse;
+            trainingWeights = nextWeights;
             coefficients = nextCoefficients;
             currentMse = nextMse;
             bestMse = Math.min(bestMse, currentMse);
@@ -1372,6 +1456,7 @@
             trainingError = false;
             epoch += 1;
             lossHistory.push({ epoch, mse: currentMse });
+            lossPeak = Math.max(lossPeak, currentMse);
             inspectedEpoch = null;
             updateConvergence();
             updateStepCounter();
@@ -1380,21 +1465,49 @@
             return true;
         }
 
+        function niceTickStep(range, intervals) {
+            const roughStep = range / Math.max(1, intervals);
+            const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+            const fraction = roughStep / magnitude;
+            const multiple = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+            return multiple * magnitude;
+        }
+
+        function lossAxes(width) {
+            const left = Math.min(86, width * 0.28);
+            lossContext.font = '11px IBM Plex Mono, monospace';
+            // Reserve enough room for the final epoch label on long runs.
+            const endLabelWidth = lossContext.measureText(String(Math.max(1, epoch) * 2)).width;
+            const right = Math.max(left + 1, width - Math.max(20, endLabelWidth / 2 + 4));
+            const plotWidth = right - left;
+            const maxXTicks = Math.max(1, Math.min(8, Math.floor(plotWidth / Math.max(60, endLabelWidth + 16))));
+            const xStep = Math.max(1, niceTickStep(Math.max(1, epoch), maxXTicks));
+            const xMax = Math.max(xStep, Math.ceil(epoch / xStep) * xStep);
+            const yStep = niceTickStep(lossPeak, 4);
+            const yMax = Math.max(yStep, Math.ceil(lossPeak / yStep) * yStep);
+            return { left, right, plotWidth, xStep, xMax, yStep, yMax };
+        }
+
+        function formatAxisTick(value, step) {
+            if (value === 0) return '0';
+            if (Math.abs(value) >= 1e6 || Math.abs(value) < 0.001) {
+                return value.toExponential(2).replace(/\.?0+(?=e)/, '');
+            }
+            const decimals = Math.max(0, -Math.floor(Math.log10(step)));
+            return value.toFixed(decimals);
+        }
+
         function drawLossGraph() {
             const { width, height } = lossCanvas.getBoundingClientRect();
             if (width <= 0 || height <= 0) return;
             const ctx = lossContext;
-            const left = Math.min(86, width * 0.28);
-            const right = Math.max(left + 1, width - 20);
+            const { left, right, plotWidth, xStep, xMax, yStep, yMax } = lossAxes(width);
             const top = 24;
             const bottom = height - 38;
-            const plotWidth = right - left;
             const plotHeight = bottom - top;
             // Normalize before multiplying by pixels, even for very large finite losses.
-            const peak = lossHistory.reduce((max, entry) => Math.max(max, entry.mse), 1e-12);
-            const lastEpoch = Math.max(1, epoch);
-            const px = value => left + (value / lastEpoch) * plotWidth;
-            const py = value => bottom - (value / peak) * plotHeight;
+            const px = value => left + (value / xMax) * plotWidth;
+            const py = value => bottom - (value / yMax) * plotHeight;
             ctx.clearRect(0, 0, width, height);
             ctx.fillStyle = '#080B10';
             ctx.fillRect(0, 0, width, height);
@@ -1402,8 +1515,10 @@
             ctx.lineWidth = 1;
             ctx.setLineDash([]);
             ctx.textBaseline = 'middle';
-            for (let index = 0; index <= 4; index++) {
-                const y = bottom - (index / 4) * plotHeight;
+            const yTickCount = Math.round(yMax / yStep);
+            for (let index = 0; index <= yTickCount; index++) {
+                const tick = index * yStep;
+                const y = py(tick);
                 ctx.strokeStyle = '#293246';
                 ctx.beginPath();
                 ctx.moveTo(left, y);
@@ -1411,13 +1526,13 @@
                 ctx.stroke();
                 ctx.fillStyle = '#9ca8ba';
                 ctx.textAlign = 'right';
-                ctx.fillText(formatNumber(peak * (index / 4), 4), left - 8, y);
+                ctx.fillText(formatAxisTick(tick, yStep), left - 8, y);
             }
-            // Show every epoch when it fits; space labels out only on longer runs.
-            const tickSpacing = Math.max(32, ctx.measureText(String(lastEpoch)).width + 16);
-            const tickCount = Math.min(lastEpoch, Math.max(1, Math.floor(plotWidth / tickSpacing)));
-            for (let index = 0; index <= tickCount; index++) {
-                const tick = Math.round(index * lastEpoch / tickCount);
+            // Use regular 1/2/5/10 intervals, not rounded fractions of the current
+            // epoch. Rounded axis bounds keep labels steady between expansions.
+            const xTickCount = Math.round(xMax / xStep);
+            for (let index = 0; index <= xTickCount; index++) {
+                const tick = index * xStep;
                 ctx.fillStyle = '#9ca8ba';
                 ctx.textAlign = 'center';
                 ctx.fillText(String(tick), px(tick), bottom + 16);
@@ -1445,11 +1560,16 @@
             ctx.strokeStyle = '#80ffdb';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            lossHistory.forEach((entry, index) => {
+            // Sample at canvas resolution so long histories do not slow every frame.
+            // Keep all recorded epochs for exact hover inspection.
+            const stride = Math.max(1, Math.ceil(lossHistory.length / Math.max(1, plotWidth * 2)));
+            for (let index = 0; index < lossHistory.length; index += stride) {
+                const entry = lossHistory[index];
                 const x = px(entry.epoch);
                 const y = py(entry.mse);
                 index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-            });
+            }
+            ctx.lineTo(px(epoch), py(currentMse));
             ctx.stroke();
             const selected = lossHistory[inspectedEpoch] || lossHistory[lossHistory.length - 1];
             if (inspectedEpoch !== null) {
@@ -1482,9 +1602,9 @@
         lossCanvas.addEventListener('pointermove', event => {
             if (!lossHistory.length) return;
             const bounds = lossCanvas.getBoundingClientRect();
-            const left = Math.min(86, bounds.width * 0.28);
-            const fraction = (event.clientX - bounds.left - left) / Math.max(1, bounds.width - 20 - left);
-            inspectedEpoch = Math.max(0, Math.min(epoch, Math.round(fraction * Math.max(1, epoch))));
+            const { left, plotWidth, xMax } = lossAxes(bounds.width);
+            const fraction = (event.clientX - bounds.left - left) / plotWidth;
+            inspectedEpoch = Math.max(0, Math.min(epoch, Math.round(fraction * xMax)));
             drawLossGraph();
         });
         lossCanvas.addEventListener('pointerleave', () => {
@@ -1495,6 +1615,7 @@
         function drawGraph() {
             const width = canvas.getBoundingClientRect().width;
             const height = canvas.getBoundingClientRect().height;
+            if (width <= 62 || height <= 58) return;
             context.clearRect(0, 0, width, height);
             context.fillStyle = '#080B10';
             context.fillRect(0, 0, width, height);
@@ -1529,6 +1650,10 @@
             context.fillText('y', 12, 20);
             context.fillText('x', width - 22, height - 12);
 
+            context.save();
+            context.beginPath();
+            context.rect(42, 24, width - 62, height - 58);
+            context.clip();
             points.forEach(point => {
                 const px = xPixel(point.x, width);
                 const actualY = yPixel(point.y, height);
@@ -1555,6 +1680,7 @@
                 context.stroke();
             }
 
+            context.restore();
             points.forEach(point => {
                 context.fillStyle = '#D0A4FF';
                 context.strokeStyle = '#f0eaff';
@@ -1667,6 +1793,8 @@
         if (typeof ResizeObserver !== 'undefined') {
             const lossResizeObserver = new ResizeObserver(resizeLossGraph);
             lossResizeObserver.observe(lossCanvas.parentElement);
+            const modelResizeObserver = new ResizeObserver(resizeGraph);
+            modelResizeObserver.observe(canvas.parentElement);
         }
 
         makePoints('linear');
