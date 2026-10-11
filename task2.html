@@ -1470,7 +1470,7 @@
                 const x = -5 + (index * 10 / 25);
                 let y;
                 if (type === 'linear') y = 0.65 * x + 0.4;
-                else if (type === 'curve') y = 0.16 * x * x - 1.8;
+                else if (type === 'curve') y = 0.15 * x * x - 1.8;
                 else if (type === 'wave') y = 1.35 * Math.sin(x * 0.9) + 0.18 * x;
                 else if (type === 'random') y = Math.random() * 5 - 2.5;
                 else y = 1.4 * Math.sin(x * 0.8) + 0.12 * x;
