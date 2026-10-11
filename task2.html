@@ -29,7 +29,7 @@
                         <div class="ml-10 font-24 purple">DATA CANVAS</div>
                     </div>
                     <div>
-                        <p class="canvas_instruction">Left click to add point · Right click a point to remove</p>
+                        <p class="canvas_instruction">Choose a tool, then click or drag on the graph to add or erase data.</p>
                     </div>
                 </div>
                 <div class="model-graph-wrap">
@@ -44,12 +44,17 @@
                     <button class="button_purple button_preset" data-preset="wave">Wave</button>
                     <!-- <button class="button_purple button_preset" data-preset="random">Random</button> -->
                     <div class="vertical_divider"></div>
-                    <button id="random_data_button" class="button_purple button_container">
-                        <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
-                            width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d="M3 6h3c5 0 7 12 12 12h3m-4-4 4 4-4 4M3 18h3c2 0 3.5-2 5-5m2-2c1.5-3 3-5 5-5h3m-4-4 4 4-4 4" />
-                        </svg>Random Data
-                    </button>
+                    <div class="data-tools" role="group" aria-label="Data canvas tools">
+                        <button class="button_purple data-tool active" data-tool="point" type="button">Add Point</button>
+                        <button class="button_purple data-tool" data-tool="spray" type="button">Spray</button>
+                        <button class="button_purple data-tool" data-tool="erase" type="button">Erase</button>
+                        <label class="nozzle-control" for="nozzle_size">
+                            <span>Nozzle</span>
+                            <input type="range" id="nozzle_size" min="0.25" max="1.5" step="0.05" value="0.65"
+                                class="custom_slider" aria-label="Nozzle size">
+                            <output id="nozzle_size_value" for="nozzle_size">0.65</output>
+                        </label>
+                    </div>
                     <button id="clear_data_button" class="button_purple button_container">
                         <svg class="pr-icon pr-icon-small" xmlns="http://www.w3.org/2000/svg"
                             width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -698,6 +703,40 @@
         gap: 10px;
     }
 
+    .data-tools {
+        display: flex;
+        flex: 1 1 100%;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .data-tool {
+        flex: 1 1 90px;
+        min-width: 82px;
+    }
+
+    .nozzle-control {
+        display: flex;
+        flex: 2 1 180px;
+        align-items: center;
+        gap: 8px;
+        min-width: 170px;
+        color: #bcb9b9;
+        font-size: 13px;
+    }
+
+    .nozzle-control .custom_slider {
+        flex: 1;
+        min-width: 70px;
+    }
+
+    #nozzle_size_value {
+        min-width: 32px;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+    }
+
     .setting_box {
         height: 310px;
         border: 1px solid #D0A4FF;
@@ -1210,8 +1249,13 @@
         const playButton = document.getElementById('play_button');
         const pauseButton = document.getElementById('pause_button');
         const speedInput = document.getElementById('speed_slider');
+        const nozzleInput = document.getElementById('nozzle_size');
+        const nozzleValue = document.getElementById('nozzle_size_value');
 
         let points = [];
+        let activeTool = 'point';
+        let pointerIsDown = false;
+        let lastToolPoint = null;
         let coefficients = [];
         let trainingWeights = [];
         let featureRows = [];
@@ -1654,12 +1698,17 @@
             context.beginPath();
             context.rect(42, 24, width - 62, height - 58);
             context.clip();
+
             points.forEach(point => {
                 const px = xPixel(point.x, width);
                 const actualY = yPixel(point.y, height);
                 const predictedY = yPixel(predict(point.x), height);
+                const residual = point.y - predict(point.x);
+                const alpha = Math.min(0.9, 0.3 + Math.abs(residual) / 4);
                 context.setLineDash([4, 4]);
-                context.strokeStyle = '#8793a8';
+                context.strokeStyle = residual >= 0
+                    ? `rgba(208, 164, 255, ${alpha})`
+                    : `rgba(227, 201, 255, ${alpha})`;
                 context.beginPath();
                 context.moveTo(px, actualY);
                 context.lineTo(px, predictedY);
@@ -1668,8 +1717,8 @@
             });
 
             if (points.length) {
-                context.strokeStyle = '#92FFD9';
-                context.lineWidth = 2.5;
+                context.strokeStyle = '#E3C9FF';
+                context.lineWidth = 2.2;
                 context.beginPath();
                 for (let index = 0; index <= 200; index++) {
                     const x = -5 + index * 10 / 200;
@@ -1682,9 +1731,13 @@
 
             context.restore();
             points.forEach(point => {
-                context.fillStyle = '#D0A4FF';
-                context.strokeStyle = '#f0eaff';
+                const residual = point.y - predict(point.x);
+                const fill = residual >= 0 ? '#D0A4FF' : '#EDEDED';
+                const stroke = residual >= 0 ? '#C291FA' : '#F5F2FF';
+                context.fillStyle = fill;
+                context.strokeStyle = stroke;
                 context.lineWidth = 1;
+                context.shadowBlur = 0;
                 context.beginPath();
                 context.arc(xPixel(point.x, width), yPixel(point.y, height), 5, 0, Math.PI * 2);
                 context.fill();
@@ -1730,11 +1783,74 @@
             };
         }
 
-        canvas.addEventListener('click', event => {
-            const point = graphCoordinatesFromEvent(event);
-            if (point.x < -5 || point.x > 5 || point.y < -4 || point.y > 4) return;
+        const pointIsOnGraph = point => point.x >= -5 && point.x <= 5 && point.y >= -4 && point.y <= 4;
+        const nozzleSize = () => Number(nozzleInput.value);
+
+        function addPoint(point) {
+            if (!pointIsOnGraph(point)) return false;
             points.push(point);
-            resetModel();
+            return true;
+        }
+
+        function sprayPoints(center) {
+            if (!pointIsOnGraph(center)) return false;
+            const radius = nozzleSize();
+            const count = Math.max(2, Math.round(radius * 7));
+            let changed = addPoint(center);
+            for (let index = 1; index < count; index++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.sqrt(Math.random()) * radius;
+                changed = addPoint({
+                    x: center.x + Math.cos(angle) * distance,
+                    y: center.y + Math.sin(angle) * distance
+                }) || changed;
+            }
+            return changed;
+        }
+
+        function erasePoints(center) {
+            if (!pointIsOnGraph(center)) return false;
+            const radius = activeTool === 'erase' ? nozzleSize() : 0.7;
+            const remaining = points.filter(point => Math.hypot(point.x - center.x, point.y - center.y) > radius);
+            const changed = remaining.length !== points.length;
+            points = remaining;
+            return changed;
+        }
+
+        function applyTool(event) {
+            const point = graphCoordinatesFromEvent(event);
+            let changed = false;
+            if (activeTool === 'point') changed = addPoint(point);
+            else if (activeTool === 'spray') changed = sprayPoints(point);
+            else changed = erasePoints(point);
+            if (changed) resetModel();
+        }
+
+        canvas.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            pointerIsDown = true;
+            lastToolPoint = null;
+            canvas.setPointerCapture(event.pointerId);
+            applyTool(event);
+            lastToolPoint = graphCoordinatesFromEvent(event);
+        });
+        canvas.addEventListener('pointermove', event => {
+            if (!pointerIsDown || activeTool === 'point') return;
+            const nextPoint = graphCoordinatesFromEvent(event);
+            const spacing = Math.max(0.08, nozzleSize() * 0.2);
+            if (!lastToolPoint || Math.hypot(nextPoint.x - lastToolPoint.x, nextPoint.y - lastToolPoint.y) >= spacing) {
+                applyTool(event);
+                lastToolPoint = nextPoint;
+            }
+        });
+        canvas.addEventListener('pointerup', event => {
+            pointerIsDown = false;
+            lastToolPoint = null;
+            if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        });
+        canvas.addEventListener('pointercancel', () => {
+            pointerIsDown = false;
+            lastToolPoint = null;
         });
 
         canvas.addEventListener('contextmenu', event => {
@@ -1755,10 +1871,20 @@
             }
         });
 
+        document.querySelectorAll('.data-tool').forEach(button => {
+            button.addEventListener('click', () => {
+                activeTool = button.dataset.tool;
+                document.querySelectorAll('.data-tool').forEach(tool => tool.classList.toggle('active', tool === button));
+                canvas.style.cursor = activeTool === 'erase' ? 'cell' : activeTool === 'spray' ? 'crosshair' : 'crosshair';
+            });
+        });
+        nozzleInput.addEventListener('input', () => {
+            nozzleValue.value = Number(nozzleInput.value).toFixed(2);
+            nozzleValue.textContent = nozzleValue.value;
+        });
         document.querySelectorAll('.button_preset').forEach(button => {
             button.addEventListener('click', () => makePoints(button.dataset.preset));
         });
-        document.getElementById('random_data_button').addEventListener('click', () => makePoints('random'));
         document.getElementById('clear_data_button').addEventListener('click', () => {
             points = [];
             resetModel();
